@@ -1,0 +1,49 @@
+.editor {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    overflow-y: auto;
+    padding-left: 48px;
+    counter-reset: line;
+}
+
+.editor div {
+    display: block;
+    position: relative;
+    height: 15px;
+    white-space: pre-wrap;
+    /* Set text color to transparent to hide the default caret */
+    color: transparent;
+
+    /* Use text-shadow to make text visible */
+    text-shadow: 0 0 black;
+}
+
+#cursor.block {
+    background-color: hsla(256, 100%, 50%, 1);
+    color: #FFF;
+}
+
+#cursor.bar {
+    width: 0;
+    animation: blink 1s step-end infinite;
+    border-left: 2px solid black;
+}
+
+@keyframes blink {
+from,
+to {
+    border-color: transparent;
+}
+50% {
+    border-color: #000;
+}
+}
+
+.editor div:before {
+    content: counter(line);
+    counter-increment: line;
+    position: absolute;
+    right: calc(100% + 16px);
+    opacity: 0.5;
+}
