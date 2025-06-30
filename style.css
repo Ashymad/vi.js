@@ -26,7 +26,7 @@
 }
 
 #cursor.bar {
-	width: 0;
+	margin: -1px;
 	animation: blink 1s step-end infinite;
 	border-left: 2px solid black;
 }
