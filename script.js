@@ -8,13 +8,18 @@ const editor = (el) => {
 		const prev = cursor.previousSibling;
 		const text = cursor.firstChild;
 
-		distance = min(next.textContent.length, distance);
-		if (distance > 0) {
-			text.textContent += next.textContent.slice(0, distance);
-			prev.textContent += text.textContent.slice(0, distance);
-			next.textContent = next.textContent.slice(distance);
-			text.textContent = text.textContent.slice(distance);
-		}
+        if (next != null) {
+            distance = min(next.textContent.length, distance);
+            if (distance > 0) {
+                text.textContent += next.textContent.slice(0, distance);
+                if (prev === null)
+                    cursor.before(text.textContent.slice(0, distance));
+                else
+                    prev.textContent += text.textContent.slice(0, distance);
+                next.textContent = next.textContent.slice(distance);
+                text.textContent = text.textContent.slice(distance);
+            }
+        }
 	};
 
 	const leftMove = (distance = 1) => {
@@ -23,45 +28,52 @@ const editor = (el) => {
 		const prev = cursor.previousSibling;
 		const text = cursor.firstChild;
 
-		distance = min(prev.textContent.length, distance);
-		if (distance > 0) {
-			text.textContent = prev.textContent.slice(-distance) + text.textContent;
-			next.textContent = text.textContent.slice(-distance) + next.textContent;
-			prev.textContent = prev.textContent.slice(0, -distance);
-			text.textContent = text.textContent.slice(0, -distance);
+        if (prev != null) {
+            distance = min(prev.textContent.length, distance);
+            if (distance > 0) {
+                text.textContent = prev.textContent.slice(-distance) + text.textContent;
+                if (next === null)
+                    cursor.after(text.textContent.slice(-distance));
+                else 
+                    next.textContent = text.textContent.slice(-distance) + next.textContent;
+                prev.textContent = prev.textContent.slice(0, -distance);
+                text.textContent = text.textContent.slice(0, -distance);
+            }
 		}
 	};
 
 	const moveCursorToLine = (node) => {
 		const cursor = document.getElementById("cursor");
-		let pos = cursor.previousSibling.textContent.length;
-		const len = cursor.firstChild.textContent.length;
+		const next = cursor.nextSibling;
+		let prev = cursor.previousSibling;
+		const text = cursor.firstChild;
+		const len = text.textContent.length;
+		let pos = prev != null ? prev.textContent.length : 0;
 
 		if (!cursor.newline) {
-			cursor.previousSibling.textContent +=
-				cursor.firstChild.textContent + cursor.nextSibling.textContent;
+            if (next === null && prev === null) {
+                cursor.before(text.textContent);
+            } else if (prev === null) {
+                next.textContent = text.textContent + next.textContent;
+            } else if (next === null) {
+                prev.textContent += text.textContent;
+            } else {
+                prev.textContent += text.textContent + next.textContent;
+                next.remove();
+            }
 		}
 		cursor.newline = false;
-		cursor.nextSibling.remove();
 
 		node.appendChild(cursor);
-		if (node.firstChild.textContent.length > 0) {
-			pos =
-				node.firstChild.textContent.length > pos
-					? pos
-					: node.firstChild.textContent.length - 1;
-			cursor.firstChild.textContent = node.firstChild.textContent.slice(
-				pos,
-				pos + len,
-			);
-			node.appendChild(
-				document.createTextNode(node.firstChild.textContent.slice(pos + len)),
-			);
-			node.firstChild.textContent = node.firstChild.textContent.slice(0, pos);
+        prev = node.firstChild;
+		if (prev != cursor && prev.textContent.length > 0) {
+			pos = min(pos, prev.textContent.length - 1);
+			text.textContent = prev.textContent.slice(pos, pos + len);
+            cursor.after(prev.textContent.slice(pos + len));
+			prev.textContent = prev.textContent.slice(0, pos);
 		} else {
-			cursor.firstChild.textContent = " ";
+			text.textContent = " ";
 			cursor.newline = true;
-			node.appendChild(document.createTextNode(""));
 		}
 	};
 
@@ -227,6 +239,7 @@ const editor = (el) => {
 					number = true;
 					break;
 				default:
+                    document.getElementById("status").firstChild.textContent = "Error: Unbound key: " + e.key;
 					break;
 			}
 			if (number == false) {

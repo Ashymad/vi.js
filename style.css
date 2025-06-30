@@ -3,21 +3,30 @@
 	font-size: 12px;
 	outline: none;
 	overflow-y: clip;
-	padding-left: 30px;
 	counter-reset: line;
+	width: 45rem;
 }
 
-.editor div {
+.editor-pane {
+	padding-left: 30px;
+}
+
+.editor-pane div {
 	display: block;
 	position: relative;
 	min-height: 15px;
-	width: 45rem;
 	word-break: break-all;
 	white-space: pre-wrap;
-	/* Set text color to transparent to hide the default caret */
 	color: transparent;
-	/* Use text-shadow to make text visible */
 	text-shadow: 0 0 black;
+}
+
+.editor-status {
+	color: transparent;
+	text-shadow: 0 0 grey;
+	position: absolute;
+	min-height: 15px;
+    bottom: 10px;
 }
 
 #cursor.block {
@@ -41,7 +50,7 @@
 	}
 }
 
-.editor div:before {
+.editor-pane div:before {
 	content: counter(line);
 	counter-increment: line;
 	position: absolute;
@@ -58,6 +67,10 @@
 	max-width: 100vw;
 	max-height: 100dvh;
 	margin: auto;
+}
+
+.window {
+	position: relative;
 }
 
 .titlebar-button {
