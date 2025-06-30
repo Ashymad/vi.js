@@ -4,14 +4,34 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>vi.js</title>
+        <link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css"/>
         <link rel="stylesheet" href="style.css" type="text/css">
     </head>
     <body>
-
-        <div class="editor" contenteditable="true" spellcheck="false">
-            <div>function exam<span id=cursor class=block>m</span>ple() {</div>
-            <div> return 42;</div>
-            <div>}</div>
+        <div id="console-app-container" class="console-app fl mh3 mv2 pt4">
+            <!--    the title bar -->
+            <div id="window-titlebar" class="titlebar bg-near-black pv2 br3 shadow-3 br--top">
+                <!--     window buttons -->
+                <div class="dib titlebar-buttons ml1 mr5 pl2">
+                    <!--      close -->
+                    <span class="dib titlebar-button br-100 bg-red"></span>
+                    <!--      minimize -->
+                    <span class="dib titlebar-button br-100 bg-yellow mh2"></span>
+                    <!--      maximize -->
+                    <span class="dib titlebar-button br-100 bg-green"></span>
+                </div>
+                <!-- 					window title -->
+                <h3 class="window-title fw4 tc pl3 ma0 dib moon-gray sans-serif f5">vi.js</h3>
+            </div>
+            <div id="app-window" class="window bg-white pt3 light-silver h5 shadow-3 br2 br--bottom">
+                <div class="window-content ph3 ma0 code">
+                    <div class="editor" contenteditable="true" spellcheck="false">
+                        <div>function exam<span id=cursor class=block>m</span>ple() {</div>
+                        <div>    return 42;</div>
+                        <div>}</div>
+                    </div>
+                </div>
+            </div>
         </div>
         <script type="text/javascript" src="script.js"></script>
     </body>
