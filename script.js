@@ -107,19 +107,27 @@ const moveCursorToLine = (
 	}
 };
 
+let spaceLeft = 0;
+
 const upScroll = (distance = 1) => {
 	let first = firstVisibleLine().previousElementSibling;
 	let last = lastVisibleLine();
 
 	while (--distance >= 0 && first != null) {
-		let overflow = overflowLines(first);
+		let overflow = overflowLines(first) + spaceLeft;
 		while (overflow > 0) {
 			overflow -= overflowLines(last);
 			last.className = "invisible";
 			last = last.previousElementSibling;
 		}
-		first.className = "";
-		first = first.previousElementSibling;
+        first.className = "";
+        first = first.previousElementSibling;
+        while (first != null && overflow + overflowLines(first) <= 0) {
+            overflow += overflowLines(first);
+            first.className = "";
+            first = first.previousElementSibling;
+        }
+        spaceLeft = overflow;
 	}
 };
 
@@ -128,7 +136,7 @@ const downScroll = (distance = 1) => {
 	let last = lastVisibleLine().nextElementSibling;
 
 	while (--distance >= 0 && last != null) {
-		let overflow = overflowLines(last);
+		let overflow = overflowLines(last) + spaceLeft;
 		while (overflow > 0) {
 			overflow -= overflowLines(first);
 			first.className = "invisible";
@@ -136,6 +144,12 @@ const downScroll = (distance = 1) => {
 		}
 		last.className = "";
 		last = last.nextElementSibling;
+        while (last != null && overflow + overflowLines(last) <= 0) {
+            overflow += overflowLines(last);
+            last.className = "";
+            last = last.nextElementSibling;
+        }
+        spaceLeft = overflow;
 	}
 };
 
@@ -174,7 +188,7 @@ const overflowLines = (line) => {
 		.getPropertyValue("line-height");
 	const lineHeight = parseFloat(style);
 
-	return Math.round(line.clientHeight / lineHeight);
+	return Math.round(line.scrollHeight / lineHeight);
 };
 
 const leftDelete = (size = 1, eat = false, once = false) => {
