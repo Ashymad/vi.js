@@ -1,182 +1,412 @@
-// Syntax highlight for JS
-const editor = (el) => {
-	const min = Math.min;
+const min = Math.min;
+const MAX_LINES = 15;
 
-	const rightMove = (distance = 1) => {
-		const cursor = document.getElementById("cursor");
-		const next = cursor.nextSibling;
-		const prev = cursor.previousSibling;
-		const text = cursor.firstChild;
+const rightMove = (distance = 1) => {
+	const cursor = document.getElementById("cursor");
+	const next = cursor.nextSibling;
+	const prev = cursor.previousSibling;
+	const text = cursor.firstChild;
 
-        if (next != null) {
-            distance = min(next.textContent.length, distance);
-            if (distance > 0) {
-                text.textContent += next.textContent.slice(0, distance);
-                if (prev === null)
-                    cursor.before(text.textContent.slice(0, distance));
-                else
-                    prev.textContent += text.textContent.slice(0, distance);
-                next.textContent = next.textContent.slice(distance);
-                text.textContent = text.textContent.slice(distance);
-            }
-        }
-	};
-
-	const leftMove = (distance = 1) => {
-		const cursor = document.getElementById("cursor");
-		const next = cursor.nextSibling;
-		const prev = cursor.previousSibling;
-		const text = cursor.firstChild;
-
-        if (prev != null) {
-            distance = min(prev.textContent.length, distance);
-            if (distance > 0) {
-                text.textContent = prev.textContent.slice(-distance) + text.textContent;
-                if (next === null)
-                    cursor.after(text.textContent.slice(-distance));
-                else 
-                    next.textContent = text.textContent.slice(-distance) + next.textContent;
-                prev.textContent = prev.textContent.slice(0, -distance);
-                text.textContent = text.textContent.slice(0, -distance);
-            }
+	if (next != null) {
+		distance = min(next.textContent.length, distance);
+		if (distance > 0) {
+			text.textContent += next.textContent.slice(0, distance);
+			if (prev === null) cursor.before(text.textContent.slice(0, distance));
+			else prev.textContent += text.textContent.slice(0, distance);
+			next.textContent = next.textContent.slice(distance);
+			text.textContent = text.textContent.slice(distance);
 		}
-	};
+	}
+};
 
-	const moveCursorToLine = (node) => {
-		const cursor = document.getElementById("cursor");
-		const next = cursor.nextSibling;
-		let prev = cursor.previousSibling;
-		const text = cursor.firstChild;
-		const len = text.textContent.length;
-		let pos = prev != null ? prev.textContent.length : 0;
+const leftMove = (distance = 1) => {
+	const cursor = document.getElementById("cursor");
+	const next = cursor.nextSibling;
+	const prev = cursor.previousSibling;
+	const text = cursor.firstChild;
 
+	if (prev != null) {
+		distance = min(prev.textContent.length, distance);
+		if (distance > 0) {
+			text.textContent = prev.textContent.slice(-distance) + text.textContent;
+			if (next === null) cursor.after(text.textContent.slice(-distance));
+			else
+				next.textContent = text.textContent.slice(-distance) + next.textContent;
+			prev.textContent = prev.textContent.slice(0, -distance);
+			text.textContent = text.textContent.slice(0, -distance);
+		}
+	}
+};
+
+const lengthCursor = () => {
+	return document.getElementById("cursor").firstChild.textContent.length;
+};
+
+const isCursorInStatus = () => {
+	return document.getElementById("cursor").parentNode.id == "status";
+};
+
+const moveCursorToStatus = () => {
+	const status = document.getElementById("status");
+	const cursor = document.getElementById("cursor");
+
+	status.firstChild.textContent = ":";
+	cursor.lastPos = leftLength();
+	cursor.lastNode = cursor.parentNode;
+	cursor.lastLen = cursor.firstChild.textContent.length;
+	changeMode(MODE_INSERT);
+	moveCursorToLine(status, 1);
+};
+
+const moveCursorToLine = (
+	node = null,
+	pos = leftLength(),
+	len = lengthCursor(),
+) => {
+	const cursor = document.getElementById("cursor");
+	const next = cursor.nextSibling;
+	let prev = cursor.previousSibling;
+	const text = cursor.firstChild;
+
+	if (isCursorInStatus()) {
+		node = cursor.lastNode;
+		pos = cursor.lastPos;
+		len = cursor.lastLen;
+	}
+
+	if (node === null) return;
+
+	if (!cursor.newline) {
+		if (next === null && prev === null) {
+			cursor.before(text.textContent);
+		} else if (prev === null) {
+			next.textContent = text.textContent + next.textContent;
+		} else if (next === null) {
+			prev.textContent += text.textContent;
+		} else {
+			prev.textContent += text.textContent + next.textContent;
+			next.remove();
+		}
+	} else {
+		text.textContent = "";
+	}
+	cursor.newline = false;
+
+	node.appendChild(cursor);
+	prev = cursor.previousSibling;
+	if (prev != null && prev.textContent.length > 0) {
+		pos = min(pos, prev.textContent.length - len);
+		if (len > 0) {
+			text.textContent = prev.textContent.slice(pos, pos + len);
+			cursor.after(prev.textContent.slice(pos + len));
+		}
+		prev.textContent = prev.textContent.slice(0, pos);
+	} else if (len > 0) {
+		text.textContent = "⏎";
+		cursor.newline = true;
+	}
+};
+
+const upScroll = (distance = 1) => {
+	let first = firstVisibleLine().previousElementSibling;
+	let last = lastVisibleLine();
+
+	while (--distance >= 0 && first != null) {
+		let overflow = overflowLines(first);
+		while (overflow > 0) {
+			overflow -= overflowLines(last);
+			last.className = "invisible";
+			last = last.previousElementSibling;
+		}
+		first.className = "";
+		first = first.previousElementSibling;
+	}
+};
+
+const downScroll = (distance = 1) => {
+	let first = firstVisibleLine();
+	let last = lastVisibleLine().nextElementSibling;
+
+	while (--distance >= 0 && last != null) {
+		let overflow = overflowLines(last);
+		while (overflow > 0) {
+			overflow -= overflowLines(first);
+			first.className = "invisible";
+			first = first.nextElementSibling;
+		}
+		last.className = "";
+		last = last.nextElementSibling;
+	}
+};
+
+const upMove = (distance = 1) => {
+	const cursor = document.getElementById("cursor");
+	let prevLine = cursor.parentNode.previousElementSibling;
+
+	if (prevLine != null) {
+		const scrollBy = distance;
+		while (--distance > 0 && prevLine.previousElementSibling != null)
+			prevLine = prevLine.previousElementSibling;
+
+		if (prevLine.className == "invisible") upScroll(scrollBy);
+
+		moveCursorToLine(prevLine);
+	}
+};
+
+const downMove = (distance = 1) => {
+	const cursor = document.getElementById("cursor");
+	let nextLine = cursor.parentNode.nextElementSibling;
+	if (nextLine != null) {
+		const scrollBy = distance;
+		while (--distance > 0 && nextLine.nextElementSibling != null)
+			nextLine = nextLine.nextElementSibling;
+
+		if (nextLine.className == "invisible") downScroll(scrollBy);
+
+		moveCursorToLine(nextLine);
+	}
+};
+
+const overflowLines = (line) => {
+	const style = globalThis
+		.getComputedStyle(line, null)
+		.getPropertyValue("line-height");
+	const lineHeight = parseFloat(style);
+
+	return Math.round(line.clientHeight / lineHeight);
+};
+
+const leftDelete = (size = 1, eat = false, once = false) => {
+	const cursor = document.getElementById("cursor");
+	const prev = cursor.previousSibling;
+	const text = cursor.firstChild;
+
+	size = prev == null ? 0 : min(prev.textContent.length, size);
+
+	if (size > 0) {
+		const linesBefore = overflowLines(cursor.parentNode);
+
+		if (eat) text.textContent = prev.textContent.slice(-size).slice(0, 1);
+		prev.textContent = prev.textContent.slice(0, -size);
+
+		const linesAfter = overflowLines(cursor.parentNode);
+		showUnderflowingLines(linesBefore - linesAfter);
+	} else if (!once) {
+		rightDelete(1, eat, true);
+	} else {
+		text.textContent = "⏎";
+		cursor.newline = true;
+	}
+};
+
+const rightDelete = (size = 1, eat = false, once = false) => {
+	const cursor = document.getElementById("cursor");
+	const next = cursor.nextSibling;
+	const text = cursor.firstChild;
+
+	size = next == null ? 0 : min(next.textContent.length, size);
+
+	if (size > 0) {
+		const linesBefore = overflowLines(cursor.parentNode);
+
+		if (eat) text.textContent = next.textContent.slice(size - 1, size);
+		next.textContent = next.textContent.slice(size);
+
+		const linesAfter = overflowLines(cursor.parentNode);
+		showUnderflowingLines(linesBefore - linesAfter);
+	} else if (!once) {
+		leftDelete(1, eat, true);
+	} else {
+		cursor.firstChild.textContent = "⏎";
+		cursor.newline = true;
+	}
+};
+
+const hideOverflowingLines = (lines = 1) => {
+	const pane = document.getElementById("cursor").parentNode.parentNode;
+
+	if (pane.childElementCount + lines > MAX_LINES) {
+		let last = lastVisibleLine();
+		while (--lines >= 0 && last != null) {
+			last.className = "invisible";
+			last = last.nextElementSibling;
+		}
+	}
+};
+
+const showUnderflowingLines = (lines = 1) => {
+	let last = lastVisibleLine().nextElementSibling;
+	while (--lines >= 0 && last != null) {
+		last.className = "";
+		last = last.nextElementSibling;
+	}
+};
+
+const leftInput = (text) => {
+	const cursor = document.getElementById("cursor");
+	const prev = cursor.previousSibling;
+
+	const linesBefore = overflowLines(cursor.parentNode);
+
+	if (prev === null) cursor.before(text);
+	else prev.textContent += text;
+
+	const linesAfter = overflowLines(cursor.parentNode);
+
+	hideOverflowingLines(linesAfter - linesBefore);
+};
+
+const rightInput = (text) => {
+	const cursor = document.getElementById("cursor");
+	const next = cursor.nextSibling;
+
+	const linesBefore = overflowLines(cursor.parentNode);
+
+	if (next === null) cursor.after(text);
+	else next.textContent = text + next.textContent;
+
+	const linesAfter = overflowLines(cursor.parentNode);
+
+	hideOverflowingLines(linesAfter - linesBefore);
+};
+
+const leftLength = () => {
+	const prev = document.getElementById("cursor").previousSibling;
+	return prev === null ? 0 : prev.textContent.length;
+};
+
+const rightLength = () => {
+	const next = document.getElementById("cursor").nextSibling;
+	return next === null ? 0 : next.textContent.length;
+};
+
+const lastVisibleLine = () => {
+	let line = document.getElementById("cursor").parentNode;
+	while (
+		line.nextElementSibling != null &&
+		line.nextElementSibling.className != "invisible"
+	)
+		line = line.nextElementSibling;
+
+	return line;
+};
+
+const firstVisibleLine = () => {
+	let line = document.getElementById("cursor").parentNode;
+	while (
+		line.previousElementSibling != null &&
+		line.previousElementSibling.className != "invisible"
+	)
+		line = line.previousElementSibling;
+
+	return line;
+};
+
+const insertNewLine = (before = false) => {
+	const newLine = document.createElement("div");
+	const line = document.getElementById("cursor").parentNode;
+	const pane = line.parentNode;
+
+	if (pane.childElementCount >= MAX_LINES) {
+		if (
+			line.nextElementSibling === null ||
+			line.nextElementSibling.className === "invisible"
+		) {
+			if (!before) {
+				firstVisibleLine().className = "invisible";
+			} else {
+				newLine.className = "invisible";
+			}
+		} else {
+			lastVisibleLine().className = "invisible";
+		}
+	}
+
+	if (before) line.before(newLine);
+	else line.after(newLine);
+
+	return newLine;
+};
+
+const MODE_NORMAL = 0;
+const MODE_INSERT = 1;
+
+const changeMode = (newMode) => {
+	const cursor = document.getElementById("cursor");
+	const text = cursor.firstChild;
+
+	if (newMode === cursor.mode) {
+		// Do nothing
+	} else if (newMode === MODE_NORMAL) {
+		cursor.mode = MODE_NORMAL;
+		cursor.className = "block";
+
+		leftDelete(1, true);
+	} else if (newMode === MODE_INSERT) {
+		cursor.mode = MODE_INSERT;
+		cursor.className = "bar";
 		if (!cursor.newline) {
-            if (next === null && prev === null) {
-                cursor.before(text.textContent);
-            } else if (prev === null) {
-                next.textContent = text.textContent + next.textContent;
-            } else if (next === null) {
-                prev.textContent += text.textContent;
-            } else {
-                prev.textContent += text.textContent + next.textContent;
-                next.remove();
-            }
+			rightInput(text.textContent);
 		}
 		cursor.newline = false;
+		text.textContent = "";
+	}
+};
 
-		node.appendChild(cursor);
-        prev = node.firstChild;
-		if (prev != cursor && prev.textContent.length > 0) {
-			pos = min(pos, prev.textContent.length - 1);
-			text.textContent = prev.textContent.slice(pos, pos + len);
-            cursor.after(prev.textContent.slice(pos + len));
-			prev.textContent = prev.textContent.slice(0, pos);
-		} else {
-			text.textContent = " ";
-			cursor.newline = true;
-		}
-	};
+const setStatus = (text) => {
+	document.getElementById("status").firstChild.textContent = text;
+};
 
-	const upMove = () => {
-		const cursor = document.getElementById("cursor");
-		const prevLine = cursor.parentNode.previousElementSibling;
-		if (prevLine != null) {
-			moveCursorToLine(prevLine);
-		}
-	};
+const executeCommand = (command) => {
+	if (command.length === 0) {
+		setStatus("");
+		return;
+	}
 
-	const downMove = () => {
-		const cursor = document.getElementById("cursor");
-		const nextLine = cursor.parentNode.nextElementSibling;
-		if (nextLine != null) {
-			moveCursorToLine(nextLine);
-		}
-	};
-
-	const leftAbsorbe = (size = 1, once = false) => {
-		const cursor = document.getElementById("cursor");
-		size =
-			cursor.previousSibling.textContent.length >= size
-				? size
-				: cursor.previousSibling.textContent.length;
-		if (size > 0) {
-			cursor.firstChild.textContent = cursor.previousSibling.textContent
-				.slice(-size)
-				.slice(0, 1);
-			cursor.previousSibling.textContent =
-				cursor.previousSibling.textContent.slice(0, -size);
-		} else if (!once) {
-			rightAbsorbe(1, true);
-		} else {
-			cursor.firstChild.textContent = " ";
-			cursor.newline = true;
-		}
-	};
-
-	const rightAbsorbe = (size = 1, once = false) => {
-		const cursor = document.getElementById("cursor");
-		size =
-			cursor.nextSibling.textContent.length >= size
-				? size
-				: cursor.nextSibling.textContent.length;
-		if (size > 0) {
-			cursor.firstChild.textContent = cursor.nextSibling.textContent.slice(
-				size - 1,
-				size,
+	const argv = command.split(" ");
+	switch (argv[0]) {
+		case "q":
+			setStatus(
+				"File modified since last complete write; write or use ! to override.",
 			);
-			cursor.nextSibling.textContent =
-				cursor.nextSibling.textContent.slice(size);
-		} else if (!once) {
-			leftAbsorbe(1, true);
-		} else {
-			cursor.firstChild.textContent = " ";
-			cursor.newline = true;
-		}
-	};
+			break;
+		case "q!":
+			document.getElementById("console-app-container").style.display = "none";
+			break;
+		case "hello":
+		case "Hello":
+			setStatus("Nice to meet you :)");
+			break;
+		default:
+			setStatus("The " + argv[0] + " command is unknown.");
+			break;
+	}
+};
 
-	const MODE_NORMAL = 0;
-	const MODE_INSERT = 1;
+const editor = (el) => {
+	let count = 0;
 
-	let mode = MODE_NORMAL;
-	let repeat = 0;
+	const cursor = document.getElementById("cursor");
 
-	const changeMode = (newMode) => {
-		if (newMode === mode) {
-			// Do nothing
-		} else if (newMode === MODE_NORMAL) {
-			mode = MODE_NORMAL;
-
-			const cursor = document.getElementById("cursor");
-			cursor.className = "block";
-
-			leftAbsorbe();
-		} else if (newMode === MODE_INSERT) {
-			mode = MODE_INSERT;
-
-			const cursor = document.getElementById("cursor");
-			cursor.className = "bar";
-
-			if (!cursor.newline) {
-				cursor.nextSibling.textContent =
-					cursor.firstChild.textContent + cursor.nextSibling.textContent;
-			}
-			cursor.newline = false;
-			cursor.firstChild.textContent = "";
-		}
-	};
+	cursor.mode = MODE_NORMAL;
 
 	el.addEventListener("keydown", (e) => {
 		e.preventDefault();
-		if (mode === MODE_INSERT) {
+		if (cursor.mode === MODE_INSERT) {
 			switch (e.key) {
 				case "Escape":
 					changeMode(MODE_NORMAL);
+					if (isCursorInStatus()) {
+						moveCursorToLine();
+						setStatus("");
+					}
 					break;
 				case "ArrowRight":
 					rightMove();
 					break;
 				case "ArrowLeft":
-					leftMove();
+					if (!isCursorInStatus() || !(leftLength() === 1)) leftMove();
 					break;
 				case "ArrowUp":
 					upMove();
@@ -184,47 +414,77 @@ const editor = (el) => {
 				case "ArrowDown":
 					downMove();
 					break;
+				case "Backspace":
+					if (leftLength() > 0) leftDelete();
+					if (isCursorInStatus() && leftLength() === 0) {
+						changeMode(MODE_NORMAL);
+						moveCursorToLine();
+					}
+					break;
+				case "Enter":
+					if (isCursorInStatus()) {
+						const status = document.getElementById("status").firstChild;
+						changeMode(MODE_NORMAL);
+						moveCursorToLine();
+						executeCommand(status.textContent.slice(1));
+					} else {
+						moveCursorToLine(insertNewLine());
+					}
+					break;
+				case "Tab":
+					leftInput("    ");
+					break;
 				default:
 					break;
 			}
 			if (e.key.length == 1) {
-				document.getElementById("cursor").previousSibling.textContent += e.key;
+				leftInput(e.key);
 			}
-		} else if (mode === MODE_NORMAL) {
+		} else if (cursor.mode === MODE_NORMAL) {
 			let number = false;
 			switch (e.key) {
 				case "l":
-					rightMove(repeat > 0 ? repeat : 1);
+					rightMove(count > 0 ? count : 1);
 					break;
+				case "Backspace":
 				case "h":
-					leftMove(repeat > 0 ? repeat : 1);
+					leftMove(count > 0 ? count : 1);
 					break;
 				case "k":
-					upMove(repeat > 0 ? repeat : 1);
+					upMove(count > 0 ? count : 1);
 					break;
 				case "j":
-					downMove(repeat > 0 ? repeat : 1);
+					downMove(count > 0 ? count : 1);
 					break;
+				case "I":
+					leftMove(leftLength());
+				/* falls through */
 				case "i":
 					changeMode(MODE_INSERT);
 					break;
+				case "A":
+					rightMove(rightLength());
+				/* falls through */
 				case "a":
 					changeMode(MODE_INSERT);
 					rightMove();
 					break;
 				case "x":
-					rightAbsorbe(repeat > 0 ? repeat : 1);
+					rightDelete(count > 0 ? count : 1, true);
 					break;
 				case "0":
-					leftMove(
-						document.getElementById("cursor").previousSibling.textContent
-							.length,
-					);
+					leftMove(leftLength());
 					break;
 				case "$":
-					rightMove(
-						document.getElementById("cursor").nextSibling.textContent.length,
-					);
+					rightMove(rightLength());
+					break;
+				case "o":
+					moveCursorToLine(insertNewLine());
+					changeMode(MODE_INSERT);
+					break;
+				case "O":
+					moveCursorToLine(insertNewLine(true));
+					changeMode(MODE_INSERT);
 					break;
 				case "1":
 				case "2":
@@ -235,15 +495,23 @@ const editor = (el) => {
 				case "7":
 				case "8":
 				case "9":
-					repeat = repeat * 10 + parseInt(e.key);
+					count = count * 10 + parseInt(e.key);
 					number = true;
 					break;
+				case ":":
+					moveCursorToStatus();
+					break;
+				case "Shift":
+				case "Control":
+				case "Alt":
+				case "Meta":
+					break;
 				default:
-                    document.getElementById("status").firstChild.textContent = "Error: Unbound key: " + e.key;
+					setStatus("Unbound key: " + e.key);
 					break;
 			}
 			if (number == false) {
-				repeat = 0;
+				count = 0;
 			}
 		}
 	});

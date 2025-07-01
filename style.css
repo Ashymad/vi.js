@@ -3,30 +3,61 @@
 	font-size: 12px;
 	outline: none;
 	overflow-y: clip;
-	counter-reset: line;
-	width: 45rem;
+	width: 45em;
 }
 
 .editor-pane {
-	padding-left: 30px;
+	display: block;
+	position: absolute;
+	top: 1.15em;
+	left: 1em;
+	right: 1em;
+	padding-left: 1.8em;
+	counter-reset: line;
 }
 
 .editor-pane div {
 	display: block;
 	position: relative;
-	min-height: 15px;
+	min-height: 1.15em;
 	word-break: break-all;
 	white-space: pre-wrap;
 	color: transparent;
 	text-shadow: 0 0 black;
 }
 
+.editor-pane div:before {
+	content: counter(line);
+	counter-increment: line;
+	position: absolute;
+	right: calc(100% + 0.6em);
+	opacity: 0.5;
+	width: 2em;
+	text-align: right;
+}
+
 .editor-status {
+	display: block;
+	position: absolute;
+	padding-left: 0;
+	bottom: 1.15em;
+	left: 1em;
+}
+
+.editor-status div {
+	display: block;
+	position: relative;
+	min-height: 1.15em;
+	word-break: break-all;
+	white-space: pre-wrap;
 	color: transparent;
 	text-shadow: 0 0 grey;
-	position: absolute;
-	min-height: 15px;
-    bottom: 10px;
+}
+
+.invisible {
+	min-height: 0px !important;
+	height: 0;
+	text-shadow: 0 0 transparent !important;
 }
 
 #cursor.block {
@@ -50,20 +81,12 @@
 	}
 }
 
-.editor-pane div:before {
-	content: counter(line);
-	counter-increment: line;
-	position: absolute;
-	right: calc(100% + 16px);
-	opacity: 0.5;
-}
-
 .console-app {
 	float: none;
 	position: fixed;
 	inset: 0px;
-	width: 50rem;
-	height: 25rem;
+	width: 50em;
+	height: 34.5em;
 	max-width: 100vw;
 	max-height: 100dvh;
 	margin: auto;
@@ -74,6 +97,6 @@
 }
 
 .titlebar-button {
-	width: 0.8rem;
-	height: 0.8rem;
+	width: 0.8em;
+	height: 0.8em;
 }
