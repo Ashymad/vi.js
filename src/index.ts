@@ -1,10 +1,10 @@
-import 'tachyons'
-import './index.css';
-import {editor} from './script.js';
+import "tachyons";
+import "./index.css";
+import { Editor } from "./Editor.ts";
 
-const rootEl = document.querySelector('#root');
+const rootEl = document.querySelector("#root");
 if (rootEl) {
-  rootEl.innerHTML = `
+	rootEl.innerHTML = `
   <div id="console-app-container" class="console-app fl mh3 mv2 pt4">
       <div class="shadow-3 br3">
           <div id="window-titlebar" class="titlebar bg-near-black pv2 br3 br--top">
@@ -15,23 +15,18 @@ if (rootEl) {
               </div>
           </div>
           <div id="app-window" class="window bg-white pt3 light-silver h5 br2 br--bottom">
-              <div class="window-content ph3 ma0 code">
-                  <div class="editor" contenteditable="true" spellcheck="false">
-                      <div id="pane" class="editor-pane">
-                          <div><span id=cursor class=block>f</span>unction exammple() {</div>
-                          <div>    return 42;</div>
-                          <div>}</div>
-                      </div>
-                          <div class="editor-status"><div id="status">Hello to vi.js :)</div>
-                      </div>
-                  </div>
-              </div>
+              <div id="editor-window" class="window-content ph3 ma0 code"></div>
           </div>
       </div>
   </div>
 `;
 }
 
-const el = document.querySelector(".editor");
-el.focus();
-editor(el);
+const editor_window: HTMLDivElement | null =
+	document.querySelector("#editor-window");
+const editor = new Editor();
+
+if (editor_window !== null) {
+	editor_window.appendChild(editor.node);
+	editor_window.focus();
+}

@@ -13,11 +13,16 @@
 	left: 1em;
 	right: 1em;
 	bottom: 1em;
-	padding-left: 1.8em;
-	counter-reset: line;
 }
 
-.editor-pane div {
+.editor-buffer {
+	display: block;
+	position: relative;
+	counter-reset: line;
+	padding-left: 2em;
+}
+
+.editor-buffer div {
 	display: block;
 	position: relative;
 	min-height: 1.15em;
@@ -27,7 +32,7 @@
 	text-shadow: 0 0 black;
 }
 
-.editor-pane div:before {
+.editor-buffer div:before {
 	content: counter(line);
 	counter-increment: line;
 	position: absolute;
@@ -42,7 +47,8 @@
 	position: absolute;
 	padding-left: 0;
 	bottom: 1.15em;
-	left: 1em;
+	left: 1.2em;
+	right: 1em;
 }
 
 .editor-status div {
@@ -61,12 +67,12 @@
 	text-shadow: 0 0 transparent !important;
 }
 
-#cursor.block {
+.editor-cursor.block {
 	background-color: hsla(256, 100%, 50%, 1);
 	color: #fff;
 }
 
-#cursor.bar {
+.editor-cursor.bar {
 	margin: -1px;
 	animation: blink 1s step-end infinite;
 	border-left: 2px solid black;
