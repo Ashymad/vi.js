@@ -82,7 +82,7 @@ export class Editor extends Div {
 					return;
 			}
 
-			const key = (ctrl ? "ctrl+" : "") + event.key;
+			const key = (ctrl ? "Control+" : "") + event.key;
 
 			if (this.mode === EditorMode.Normal) {
 				if (/^\d$/.test(key)) {
@@ -135,7 +135,7 @@ export class Editor extends Div {
 			case "Backspace":
 				this.cursor.delL();
 				break;
-			case "ctrl+c":
+			case "Control+c":
 			case "Escape":
 				this.switchMode(EditorMode.Normal);
 				break;
