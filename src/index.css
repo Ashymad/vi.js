@@ -15,14 +15,14 @@
 	bottom: 1em;
 }
 
-.editor-buffer {
+.editor-pane-buffer {
 	display: block;
 	position: relative;
 	counter-reset: line;
 	padding-left: 2em;
 }
 
-.editor-buffer div {
+.editor-pane-buffer div {
 	display: block;
 	position: relative;
 	min-height: 1.15em;
@@ -32,7 +32,7 @@
 	text-shadow: 0 0 black;
 }
 
-.editor-buffer div:before {
+.editor-pane-buffer div:before {
 	content: counter(line);
 	counter-increment: line;
 	position: absolute;
@@ -42,7 +42,7 @@
 	text-align: right;
 }
 
-.editor-status {
+.editor-status-buffer {
 	display: block;
 	position: absolute;
 	padding-left: 0;
@@ -51,7 +51,7 @@
 	right: 1em;
 }
 
-.editor-status div {
+.editor-status-buffer div {
 	display: block;
 	position: relative;
 	min-height: 1.15em;
@@ -73,7 +73,7 @@
 }
 
 .editor-cursor.bar {
-	margin: -1px;
+	margin-left: -1.43333px;
 	animation: blink 1s step-end infinite;
 	border-left: 2px solid black;
 }
