@@ -109,6 +109,11 @@ export class Editor extends Div {
 				this.switchMode(EditorMode.Insert);
 				this.cursor.bleL();
 				break;
+			case "o":
+				this.switchMode(EditorMode.Insert);
+				this.cursor.bleL();
+				this.cursor.line.buffer.attachLine().attachCursor(this.cursor);
+				break;
 			case "h":
 				this.cursor.moveL(count);
 				break;

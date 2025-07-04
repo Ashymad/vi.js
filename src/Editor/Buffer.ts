@@ -3,15 +3,46 @@ import { Editor } from "../Editor.ts";
 import { Line } from "./Line.ts";
 import { Pane } from "./Pane.ts";
 import { Status } from "./Status.ts";
+import { Cursor } from "./Cursor.ts";
+
+export type Position = {
+	column: number;
+	line: number;
+};
 
 export class Buffer extends Div {
 	lines: Line[] = [];
+	position: Position = { column: 0, line: 0 };
+	cursor: Cursor | null = null;
 
 	constructor(name: string) {
 		super("editor-" + name + "-buffer");
 	}
 
-	attachLine(line: Line = new Line(this), attached = false): Line {
+	attachCursor(cursor: Cursor, attached = false): Cursor {
+		this.cursor = cursor;
+		if (!attached)
+			this.lines[this.position.line].attachCursor(cursor, this.position.column);
+		return cursor;
+	}
+
+	detachCursor(detached = false): Cursor | null {
+		const cursor = this.cursor;
+		if (cursor !== null) {
+			this.position.column = cursor.column;
+			this.position.line = cursor.line.index;
+
+			if (!detached) cursor.line.detachCursor(true);
+
+			this.cursor = null;
+		}
+		return cursor;
+	}
+
+	attachLine(
+		line: Line = new Line(this, this.lines.length),
+		attached = false,
+	): Line {
 		this.lines.push(this.appendChild(line));
 
 		if (!attached) line.attachBuffer(this, true);

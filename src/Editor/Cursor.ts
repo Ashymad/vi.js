@@ -11,6 +11,7 @@ export class Cursor extends Span {
 	static readonly newlineString: string = "⏎";
 	text: Text;
 	line: Line;
+	column: number = 0;
 	shape: CursorShape = CursorShape.Block;
 
 	constructor(line: Line) {
@@ -20,11 +21,16 @@ export class Cursor extends Span {
 		this.line = this.attachLine(line);
 	}
 
-	attachLine(line: Line, attached = false): Line {
+	attachLine(line: Line, column: number = this.column, attached = false): Line {
+		if (this.line !== undefined) this.line.detachCursor();
 		this.line = line;
-
-		if (!attached) line.attachCursor(this, true);
+		if (!attached) line.attachCursor(this, column, true);
+		this.moveTo(column, false);
 		return this.line;
+	}
+
+	textContent(): string {
+		return this.text.textContent === null ? "" : this.text.textContent;
 	}
 
 	setShape(shape: CursorShape): void {
@@ -38,12 +44,15 @@ export class Cursor extends Span {
 		}
 	}
 
-	eat(char: string | null): string | null {
-		if (char === null || this.text.textContent === null) return null;
+	length(): number {
+		return this.shape == CursorShape.Block ? 1 : 0;
+	}
 
-		let txt = this.text.textContent;
-		const length = this.shape == CursorShape.Block ? 1 : 0;
-		if (char.length === length) this.text.textContent = char;
+	eat(char: string | null): string | null {
+		if (char === null) return null;
+
+		let txt = this.textContent();
+		if (char.length === this.length()) this.text.textContent = char;
 		else txt = char;
 
 		this.newline = false;
@@ -98,5 +107,15 @@ export class Cursor extends Span {
 
 	moveL(len = 1): void {
 		this.line.pushR(this.delL(len));
+	}
+
+	moveTo(col: number, save = true): void {
+		if (col > this.line.lengthL()) {
+			this.moveR(col - this.line.lengthL());
+		} else {
+			this.moveL(this.line.lengthL() - col);
+		}
+
+		if (save) this.column = col;
 	}
 }

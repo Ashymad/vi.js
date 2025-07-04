@@ -25,6 +25,11 @@ class Element<Type extends HTMLElement> {
 		}
 		return child;
 	}
+
+	removeLastChild(): void {
+		if (this.node.lastChild !== null)
+			this.node.removeChild(this.node.lastChild);
+	}
 }
 
 export class Div extends Element<HTMLDivElement> {
