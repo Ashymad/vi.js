@@ -8,22 +8,27 @@ export class Tab extends Div {
 
 	constructor(editor: Editor) {
 		super("editor-tab");
+
 		this.editor = editor;
 
-		this.editor = this.attachEditor(editor);
+		editor.attachTab(this);
 	}
 
-	attachPane(pane: Pane = new Pane(this), attached = false): Pane {
-		this.panes.push(this.appendChild(pane));
+	attachPane(pane: Pane = new Pane(this)): Pane {
+		if (!this.panes.includes(pane)) {
+			this.panes.push(this.appendChild(pane));
 
-		if (!attached) pane.attachTab(this, true);
+			pane.attachTab(this);
+		}
 		return pane;
 	}
 
-	attachEditor(editor: Editor, attached = false): Editor {
-		this.editor = editor;
+	attachEditor(editor: Editor): Editor {
+		if (this.editor !== editor) {
+			this.editor = editor;
 
-		if (!attached) editor.attachTab(this, true);
+			editor.attachTab(this);
+		}
 		return editor;
 	}
 }

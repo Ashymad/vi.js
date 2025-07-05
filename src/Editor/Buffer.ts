@@ -19,33 +19,40 @@ export class Buffer extends Div {
 		super("editor-" + name + "-buffer");
 	}
 
-	attachCursor(cursor: Cursor, attached = false): Cursor {
-		this.cursor = cursor;
-		if (!attached)
-			this.lines[this.position.line].attachCursor(cursor, this.position.column);
+	attachCursor(cursor: Cursor, line = this.lines[this.position.line]): Cursor {
+		if (this.cursor !== cursor) {
+			this.cursor = cursor;
+
+			if (line !== undefined) line.attachCursor(cursor, this.position.column);
+		}
 		return cursor;
 	}
 
-	detachCursor(detached = false): Cursor | null {
+	detachCursor(): Cursor | null {
 		const cursor = this.cursor;
+		this.cursor = null;
+
 		if (cursor !== null) {
 			this.position.column = cursor.column;
 			this.position.line = cursor.line.index;
 
-			if (!detached) cursor.line.detachCursor(true);
-
-			this.cursor = null;
+			cursor.line.detachCursor();
 		}
 		return cursor;
 	}
 
 	attachLine(
-		line: Line = new Line(this, this.lines.length),
-		attached = false,
+		index: number = this.lines.length,
+		line: Line = new Line(this, index),
 	): Line {
-		this.lines.push(this.appendChild(line));
+		if (!this.lines.includes(line)) {
+			this.lines.splice(index, 0, this.insertChild(index, line));
+			for (let i = index + 1; i < this.lines.length; i++) {
+				this.lines[i].index++;
+			}
 
-		if (!attached) line.attachBuffer(this, true);
+			line.attachBuffer(index, this);
+		}
 		return line;
 	}
 }
@@ -56,20 +63,27 @@ export class PaneBuffer extends Buffer {
 
 	constructor(editor: Editor) {
 		super("pane");
-		this.editor = this.attachEditor(editor);
+
+		this.editor = editor;
+
+		editor.attachBuffer(this);
 	}
 
-	attachPane(pane: Pane, attached = false): Pane {
-		this.pane = pane;
+	attachPane(pane: Pane): Pane {
+		if (this.pane !== pane) {
+			this.pane = pane;
 
-		if (!attached) pane.attachBuffer(this, true);
+			pane.attachBuffer(this);
+		}
 		return pane;
 	}
 
-	attachEditor(editor: Editor, attached = false): Editor {
-		this.editor = editor;
+	attachEditor(editor: Editor): Editor {
+		if (this.editor !== editor) {
+			this.editor = editor;
 
-		if (!attached) editor.attachBuffer(this, true);
+			editor.attachBuffer(this);
+		}
 		return editor;
 	}
 }
@@ -79,13 +93,18 @@ export class StatusBuffer extends Buffer {
 
 	constructor(status: Status) {
 		super("status");
-		this.status = this.attachStatus(status);
-	}
 
-	attachStatus(status: Status, attached = false): Status {
 		this.status = status;
 
-		if (!attached) status.attachBuffer(this, true);
+		status.attachBuffer(this);
+	}
+
+	attachStatus(status: Status): Status {
+		if (this.status !== status) {
+			this.status = status;
+
+			status.attachBuffer(this);
+		}
 		return status;
 	}
 }

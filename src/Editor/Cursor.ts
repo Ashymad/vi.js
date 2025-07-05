@@ -18,14 +18,22 @@ export class Cursor extends Span {
 		super("editor-cursor block");
 
 		this.text = this.appendText(Cursor.newlineString);
-		this.line = this.attachLine(line);
+		this.line = line;
+
+		line.attachCursor(this);
 	}
 
-	attachLine(line: Line, column: number = this.column, attached = false): Line {
-		if (this.line !== undefined) this.line.detachCursor();
-		this.line = line;
-		if (!attached) line.attachCursor(this, column, true);
-		this.moveTo(column, false);
+	attachLine(line: Line, column: number = this.column): Line {
+		if (this.line !== line) {
+			this.line.detachCursor();
+
+			this.line = line;
+
+			line.attachCursor(this, column);
+			if (this.length() > 0) this.delLR();
+			this.moveTo(column);
+			this.column = column;
+		}
 		return this.line;
 	}
 
@@ -48,12 +56,12 @@ export class Cursor extends Span {
 		return this.shape == CursorShape.Block ? 1 : 0;
 	}
 
-	eat(char: string | null): string | null {
-		if (char === null) return null;
+	eat(char: string | null): string {
+		if (char === null) return "";
 
-		let txt = this.textContent();
+		const txt = this.textContent();
+
 		if (char.length === this.length()) this.text.textContent = char;
-		else txt = char;
 
 		this.newline = false;
 
@@ -71,15 +79,21 @@ export class Cursor extends Span {
 	}
 
 	delR(len = 1): string | null {
-		const text = this.line.popR(len);
-		if (text !== null) return this.eat(text.slice(-1)) + text.slice(0, -1);
-		return null;
+		let text = this.line.popR(len);
+		if (text !== null) {
+			const out = this.eat(text.slice(-1));
+			text = out + text.slice(0, text.length - out.length);
+		}
+		return text;
 	}
 
 	delL(len = 1): string | null {
-		const text = this.line.popL(len);
-		if (text !== null) return text.slice(1) + this.eat(text.slice(0, 1));
-		return null;
+		let text = this.line.popL(len);
+		if (text !== null) {
+			const out = this.eat(text.slice(0, 1));
+			text = text.slice(out.length) + out;
+		}
+		return text;
 	}
 
 	delLR(): void {
@@ -109,13 +123,15 @@ export class Cursor extends Span {
 		this.line.pushR(this.delL(len));
 	}
 
-	moveTo(col: number, save = true): void {
+	save(): void {
+		this.column = this.line.lengthL();
+	}
+
+	moveTo(col: number): void {
 		if (col > this.line.lengthL()) {
 			this.moveR(col - this.line.lengthL());
 		} else {
 			this.moveL(this.line.lengthL() - col);
 		}
-
-		if (save) this.column = col;
 	}
 }

@@ -8,14 +8,26 @@ export class Line extends Div {
 	rText: Text | null = null;
 	cursor: Cursor | null = null;
 	buffer: Buffer;
-	readonly index: number;
+	index: number;
 
 	constructor(buffer: Buffer, index: number) {
 		super("editor-line");
+
 		this.lText = this.appendText("");
+		this.buffer = buffer;
 		this.index = index;
 
-		this.buffer = this.attachBuffer(buffer);
+		buffer.attachLine(index, this);
+	}
+
+	next(): Line {
+		return this.buffer.lines.length > this.index + 1
+			? this.buffer.lines[this.index + 1]
+			: this;
+	}
+
+	prev(): Line {
+		return this.index > 0 ? this.buffer.lines[this.index - 1] : this;
 	}
 
 	setL(text: string): void {
@@ -42,7 +54,11 @@ export class Line extends Div {
 	}
 
 	popL(len = 1): string | null {
-		if (this.lText.textContent !== null && this.lText.textContent.length > 0) {
+		if (
+			len > 0 &&
+			this.lText.textContent !== null &&
+			this.lText.textContent.length > 0
+		) {
 			len = Math.min(len, this.lText.textContent.length);
 
 			const text = this.lText.textContent.slice(-len);
@@ -54,6 +70,7 @@ export class Line extends Div {
 
 	popR(len = 1): string | null {
 		if (
+			len > 0 &&
 			this.rText !== null &&
 			this.rText.textContent !== null &&
 			this.rText.textContent.length > 0
@@ -70,35 +87,45 @@ export class Line extends Div {
 	attachCursor(
 		cursor: Cursor = new Cursor(this),
 		column: number = cursor.column,
-		_attached = false,
 	): Cursor {
-		this.cursor = this.appendChild(cursor);
-		this.rText = this.appendText("");
-		this.buffer.attachCursor(cursor, true);
+		if (this.cursor !== cursor) {
+			this.cursor = this.appendChild(cursor);
+			this.rText = this.appendText("");
 
-		if (cursor.line !== this) cursor.attachLine(this, column, true);
+			cursor.attachLine(this, column);
+			this.buffer.attachCursor(cursor, this);
+		}
+
 		return cursor;
 	}
 
-	detachCursor(detached = false): Cursor | null {
+	detachCursor(): Cursor | null {
 		const cursor = this.cursor;
+		this.cursor = null;
 
 		if (cursor !== null) {
-			if (!detached) this.buffer.detachCursor(true);
-			this.pushL([cursor.textContent(), this.popR(this.lengthR())].join(""));
-			this.removeLastChild();
+			this.buffer.detachCursor();
 
-			this.cursor = null;
+			this.pushL(
+				[
+					cursor.newline ? "" : cursor.textContent(),
+					this.popR(this.lengthR()),
+				].join(""),
+			);
+			this.removeLastChild();
 			this.rText = null;
 		}
 
 		return cursor;
 	}
 
-	attachBuffer(buffer: Buffer, attached = false): Buffer {
-		this.buffer = buffer;
+	attachBuffer(index: number, buffer: Buffer): Buffer {
+		if (this.buffer !== buffer) {
+			this.buffer = buffer;
+			this.index = index;
 
-		if (!attached) buffer.attachLine(this, true);
+			buffer.attachLine(index, this);
+		}
 		return buffer;
 	}
 }

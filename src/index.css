@@ -81,10 +81,10 @@
 @keyframes blink {
 	from,
 	to {
-		border-color: transparent;
+		border-color: #000;
 	}
 	50% {
-		border-color: #000;
+		border-color: transparent;
 	}
 }
 

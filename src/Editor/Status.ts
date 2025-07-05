@@ -11,25 +11,28 @@ export class Status extends Div {
 	constructor(editor: Editor) {
 		super("editor-status");
 
-		this.editor = this.attachEditor(editor);
+		this.editor = editor;
 		this.buffer = this.attachBuffer();
 		this.info = this.buffer.attachLine();
+
+		editor.attachStatus(this);
 	}
 
-	attachEditor(editor: Editor, attached = false): Editor {
-		this.editor = editor;
+	attachEditor(editor: Editor): Editor {
+		if (this.editor !== editor) {
+			this.editor = editor;
 
-		if (!attached) editor.attachStatus(this, true);
+			editor.attachStatus(this);
+		}
 		return editor;
 	}
 
-	attachBuffer(
-		buffer: StatusBuffer = new StatusBuffer(this),
-		attached = false,
-	): StatusBuffer {
-		this.buffer = this.replaceFirstChild(buffer);
+	attachBuffer(buffer: StatusBuffer = new StatusBuffer(this)): StatusBuffer {
+		if (this.buffer !== buffer) {
+			this.buffer = this.replaceFirstChild(buffer);
 
-		if (!attached) buffer.attachStatus(this, true);
+			buffer.attachStatus(this);
+		}
 		return buffer;
 	}
 

@@ -11,6 +11,16 @@ class Element<Type extends HTMLElement> {
 		return node;
 	}
 
+	insertChild<U extends HTMLElement, T extends Element<U>>(
+		index: number,
+		node: T,
+	): T {
+		if (this.node.children.length > index)
+			this.node.insertBefore(node.node, this.node.children[index]);
+		else this.appendChild(node);
+		return node;
+	}
+
 	appendText(text: string): Text {
 		const txt = document.createTextNode(text);
 		this.node.appendChild(txt);

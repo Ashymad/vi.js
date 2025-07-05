@@ -24,9 +24,10 @@ if (rootEl) {
 
 const editor_window: HTMLDivElement | null =
 	document.querySelector("#editor-window");
-const editor = new Editor();
+
+globalThis.edit = new Editor();
 
 if (editor_window !== null) {
-	editor_window.appendChild(editor.node);
+	editor_window.appendChild(globalThis.edit.node);
 	editor_window.focus();
 }
