@@ -106,17 +106,16 @@ export class Line extends Div {
 		if (cursor !== null) {
 			this.buffer.detachCursor();
 
-			this.pushL(
-				[
-					cursor.newline ? "" : cursor.textContent(),
-					this.popR(this.lengthR()),
-				].join(""),
-			);
+			this.pushL([cursor.textContent(), this.popR(this.lengthR())].join(""));
 			this.removeLastChild();
 			this.rText = null;
 		}
 
 		return cursor;
+	}
+
+	hide(): void {
+		this.node.classList.add("invisible");
 	}
 
 	attachBuffer(index: number, buffer: Buffer): Buffer {

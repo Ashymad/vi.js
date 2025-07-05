@@ -1,9 +1,9 @@
 import { Div } from "../Element.ts";
-import { Pane } from "./Pane.ts";
+import { TabPane } from "./Pane.ts";
 import { Editor } from "../Editor.ts";
 
 export class Tab extends Div {
-	panes: Pane[] = [];
+	panes: TabPane[] = [];
 	editor: Editor;
 
 	constructor(editor: Editor) {
@@ -14,7 +14,7 @@ export class Tab extends Div {
 		editor.attachTab(this);
 	}
 
-	attachPane(pane: Pane = new Pane(this)): Pane {
+	attachPane(pane: TabPane = new TabPane(this)): TabPane {
 		if (!this.panes.includes(pane)) {
 			this.panes.push(this.appendChild(pane));
 

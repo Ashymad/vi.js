@@ -6,23 +6,23 @@
 	width: 45em;
 }
 
-.editor-pane {
+.editor-tab-pane {
 	display: block;
 	position: absolute;
 	top: 1.15em;
 	left: 1em;
 	right: 1em;
-	bottom: 1em;
+	bottom: 2.5em;
 }
 
-.editor-pane-buffer {
+.editor-tab-pane .editor-buffer {
 	display: block;
 	position: relative;
 	counter-reset: line;
 	padding-left: 2em;
 }
 
-.editor-pane-buffer div {
+.editor-tab-pane .editor-buffer div {
 	display: block;
 	position: relative;
 	min-height: 1.15em;
@@ -32,7 +32,7 @@
 	text-shadow: 0 0 black;
 }
 
-.editor-pane-buffer div:before {
+.editor-tab-pane .editor-buffer div:before {
 	content: counter(line);
 	counter-increment: line;
 	position: absolute;
@@ -42,7 +42,7 @@
 	text-align: right;
 }
 
-.editor-status-buffer {
+.editor-status-pane .editor-buffer {
 	display: block;
 	position: absolute;
 	padding-left: 0;
@@ -51,7 +51,7 @@
 	right: 1em;
 }
 
-.editor-status-buffer div {
+.editor-status-pane .editor-buffer div {
 	display: block;
 	position: relative;
 	min-height: 1.15em;

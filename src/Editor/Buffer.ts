@@ -1,8 +1,6 @@
 import { Div } from "../Element.ts";
-import { Editor } from "../Editor.ts";
 import { Line } from "./Line.ts";
 import { Pane } from "./Pane.ts";
-import { Status } from "./Status.ts";
 import { Cursor } from "./Cursor.ts";
 
 export type Position = {
@@ -14,16 +12,17 @@ export class Buffer extends Div {
 	lines: Line[] = [];
 	position: Position = { column: 0, line: 0 };
 	cursor: Cursor | null = null;
+	pane: Pane | null = null;
 
-	constructor(name: string) {
-		super("editor-" + name + "-buffer");
+	constructor() {
+		super("editor-buffer");
 	}
 
 	attachCursor(cursor: Cursor, line = this.lines[this.position.line]): Cursor {
-		if (this.cursor !== cursor) {
+		if (this.cursor !== cursor && line !== undefined) {
 			this.cursor = cursor;
 
-			if (line !== undefined) line.attachCursor(cursor, this.position.column);
+			line.attachCursor(cursor, this.position.column);
 		}
 		return cursor;
 	}
@@ -50,23 +49,12 @@ export class Buffer extends Div {
 			for (let i = index + 1; i < this.lines.length; i++) {
 				this.lines[i].index++;
 			}
+			if (this.pane !== null && this.lines.length > this.pane.clientHeight())
+				this.lines[this.pane.clientHeight()].hide();
 
 			line.attachBuffer(index, this);
 		}
 		return line;
-	}
-}
-
-export class PaneBuffer extends Buffer {
-	pane: Pane | null = null;
-	editor: Editor;
-
-	constructor(editor: Editor) {
-		super("pane");
-
-		this.editor = editor;
-
-		editor.attachBuffer(this);
 	}
 
 	attachPane(pane: Pane): Pane {
@@ -76,35 +64,5 @@ export class PaneBuffer extends Buffer {
 			pane.attachBuffer(this);
 		}
 		return pane;
-	}
-
-	attachEditor(editor: Editor): Editor {
-		if (this.editor !== editor) {
-			this.editor = editor;
-
-			editor.attachBuffer(this);
-		}
-		return editor;
-	}
-}
-
-export class StatusBuffer extends Buffer {
-	status: Status;
-
-	constructor(status: Status) {
-		super("status");
-
-		this.status = status;
-
-		status.attachBuffer(this);
-	}
-
-	attachStatus(status: Status): Status {
-		if (this.status !== status) {
-			this.status = status;
-
-			status.attachBuffer(this);
-		}
-		return status;
 	}
 }

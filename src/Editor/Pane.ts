@@ -1,28 +1,37 @@
 import { Div } from "../Element.ts";
-import { PaneBuffer } from "./Buffer.ts";
+import { Buffer } from "./Buffer.ts";
 import { Tab } from "./Tab.ts";
+import { Editor } from "../Editor.ts";
 
 export class Pane extends Div {
-	buffer: PaneBuffer | null = null;
-	tab: Tab;
+	buffer: Buffer | null = null;
+	editor: Editor;
 
-	constructor(tab: Tab) {
-		super("editor-pane");
+	constructor(editor: Editor, name: string) {
+		super("editor-" + name + "-pane");
 
-		this.tab = tab;
-
-		tab.attachPane(this);
+		this.editor = editor;
 	}
 
-	attachBuffer(
-		buffer: PaneBuffer = this.tab.editor.attachBuffer(),
-	): PaneBuffer {
+	attachBuffer(buffer: Buffer = this.editor.attachBuffer()): Buffer {
 		if (this.buffer !== buffer) {
 			this.buffer = this.replaceFirstChild(buffer);
 
 			buffer.attachPane(this);
 		}
 		return buffer;
+	}
+}
+
+export class TabPane extends Pane {
+	tab: Tab;
+
+	constructor(tab: Tab) {
+		super(tab.editor, "tab");
+
+		this.tab = tab;
+
+		tab.attachPane(this);
 	}
 
 	attachTab(tab: Tab): Tab {

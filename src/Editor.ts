@@ -1,6 +1,6 @@
 import { Div } from "./Element.ts";
 
-import { PaneBuffer, Buffer } from "./Editor/Buffer.ts";
+import { Buffer } from "./Editor/Buffer.ts";
 import { Status } from "./Editor/Status.ts";
 import { Cursor, CursorShape } from "./Editor/Cursor.ts";
 import { Tab } from "./Editor/Tab.ts";
@@ -14,7 +14,7 @@ enum EditorMode {
 export class Editor extends Div {
 	status: Status;
 	tabs: Tab[] = [];
-	buffers: PaneBuffer[] = [];
+	buffers: Buffer[] = [];
 	cursor: Cursor;
 	mode: EditorMode = EditorMode.Normal;
 
@@ -24,6 +24,7 @@ export class Editor extends Div {
 		super("editor");
 		this.node.contentEditable = "true";
 		this.node.spellcheck = false;
+
 		this.lastBuffer = this.attachTab().attachPane().attachBuffer();
 		this.cursor = new Cursor(this.lastBuffer.attachLine());
 
@@ -33,11 +34,9 @@ export class Editor extends Div {
 		this.handleKey();
 	}
 
-	attachBuffer(buffer: PaneBuffer = new PaneBuffer(this)): PaneBuffer {
+	attachBuffer(buffer: Buffer = new Buffer()): Buffer {
 		if (!this.buffers.includes(buffer)) {
 			this.buffers.push(buffer);
-
-			buffer.attachEditor(this);
 		}
 		return buffer;
 	}

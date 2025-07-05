@@ -1,19 +1,14 @@
-import { Div } from "../Element.ts";
+import { Pane } from "./Pane.ts";
 import { Editor } from "../Editor.ts";
-import { StatusBuffer } from "./Buffer.ts";
 import { Line } from "./Line.ts";
 
-export class Status extends Div {
-	buffer: StatusBuffer;
-	editor: Editor;
+export class Status extends Pane {
 	info: Line;
 
 	constructor(editor: Editor) {
-		super("editor-status");
+		super(editor, "status");
 
-		this.editor = editor;
-		this.buffer = this.attachBuffer();
-		this.info = this.buffer.attachLine();
+		this.info = this.attachBuffer().attachLine();
 
 		editor.attachStatus(this);
 	}
@@ -25,15 +20,6 @@ export class Status extends Div {
 			editor.attachStatus(this);
 		}
 		return editor;
-	}
-
-	attachBuffer(buffer: StatusBuffer = new StatusBuffer(this)): StatusBuffer {
-		if (this.buffer !== buffer) {
-			this.buffer = this.replaceFirstChild(buffer);
-
-			buffer.attachStatus(this);
-		}
-		return buffer;
 	}
 
 	message(msg: string): void {

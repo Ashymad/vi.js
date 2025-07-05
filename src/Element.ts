@@ -40,6 +40,15 @@ class Element<Type extends HTMLElement> {
 		if (this.node.lastChild !== null)
 			this.node.removeChild(this.node.lastChild);
 	}
+
+	clientHeight(): number {
+		const lineHeight = parseFloat(
+			globalThis
+				.getComputedStyle(this.node, null)
+				.getPropertyValue("line-height"),
+		);
+		return Math.floor(this.node.clientHeight / lineHeight);
+	}
 }
 
 export class Div extends Element<HTMLDivElement> {

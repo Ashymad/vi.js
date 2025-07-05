@@ -38,7 +38,9 @@ export class Cursor extends Span {
 	}
 
 	textContent(): string {
-		return this.text.textContent === null ? "" : this.text.textContent;
+		return this.text.textContent === null || this.newline
+			? ""
+			: this.text.textContent;
 	}
 
 	setShape(shape: CursorShape): void {
@@ -69,13 +71,11 @@ export class Cursor extends Span {
 	}
 
 	bleR(): void {
-		if (!this.newline) this.line.pushR(this.eat(""));
-		else this.eat("");
+		this.line.pushR(this.eat(""));
 	}
 
 	bleL(): void {
-		if (!this.newline) this.line.pushL(this.eat(""));
-		else this.eat("");
+		this.line.pushL(this.eat(""));
 	}
 
 	delR(len = 1): string | null {
