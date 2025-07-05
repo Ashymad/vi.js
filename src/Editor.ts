@@ -105,38 +105,27 @@ export class Editor extends Div {
 		});
 	}
 
-	handleSimpleInput(key: string, save = false): boolean {
+	handleSimpleInput(key: string): boolean {
 		if (key.length == 1) {
 			this.cursor.line.pushL(key);
-			if (save) this.cursor.save();
-		} else {
-			switch (key) {
-				case "ArrowLeft":
-					this.cursor.moveL();
-					if (save) this.cursor.save();
-					break;
-				case "ArrowRight":
-					this.cursor.moveR();
-					if (save) this.cursor.save();
-					break;
-				case "Backspace":
-					this.cursor.delL();
-					if (save) this.cursor.save();
-					break;
-				default:
-					return false;
-			}
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	handleNormalModeKey(key: string, count: number): void {
 		switch (key) {
+			case "I":
+				this.cursor.moveL(this.cursor.line.lengthL());
+			/* falls through */
 			case "i":
 				this.switchMode(EditorMode.Insert);
 				this.cursor.bleR();
 				this.cursor.save();
 				break;
+			case "A":
+				this.cursor.moveR(this.cursor.line.lengthR());
+			/* falls through */
 			case "a":
 				this.switchMode(EditorMode.Insert);
 				this.cursor.bleL();
@@ -184,8 +173,24 @@ export class Editor extends Div {
 	}
 
 	handleInsertModeKey(key: string): void {
-		if (this.handleSimpleInput(key, true)) return;
+		if (this.handleSimpleInput(key)) {
+			this.cursor.save();
+			return;
+		}
+
 		switch (key) {
+			case "ArrowLeft":
+				this.cursor.moveL();
+				this.cursor.save();
+				break;
+			case "ArrowRight":
+				this.cursor.moveR();
+				this.cursor.save();
+				break;
+			case "Backspace":
+				this.cursor.delL();
+				this.cursor.save();
+				break;
 			case "ArrowUp":
 				this.cursor.line.prev().attachCursor(this.cursor);
 				break;
@@ -209,20 +214,53 @@ export class Editor extends Div {
 	}
 
 	handleExModeKey(key: string): void {
-		if (this.handleSimpleInput(key, false)) return;
+		if (this.handleSimpleInput(key)) return;
 
 		switch (key) {
-			default:
-				this.status.message("Unbound key: " + key);
-				this.switchMode(EditorMode.Normal);
-				this.lastBuffer.attachCursor(this.cursor);
+			case "ArrowLeft":
+				if (this.cursor.line.lengthL() > 1) this.cursor.moveL();
 				break;
-			case "Enter":
+			case "ArrowRight":
+				this.cursor.moveR();
+				break;
+			case "Backspace":
+				if (this.cursor.line.lengthL() > 1) this.cursor.delL();
+				break;
 			case "Control+c":
 			case "Escape":
 				this.switchMode(EditorMode.Normal);
-				this.lastBuffer.attachCursor(this.cursor);
+				this.status.message("");
 				break;
+			case "Enter":
+				this.switchMode(EditorMode.Normal);
+				if (this.status.info.lengthL() > 1)
+					this.executeExCommand(
+						this.status.info.popL(this.status.info.lengthL() - 1),
+					);
+				else this.status.message("");
+				break;
+			default:
+				this.switchMode(EditorMode.Normal);
+				this.status.message("Unbound key: " + key);
+				break;
+		}
+	}
+
+	executeExCommand(cmd: string | null): void {
+		if (cmd === null) {
+			this.status.message("");
+			return;
+		}
+
+		const argv = cmd.split(" ");
+
+		switch (argv[0]) {
+			case "Hello":
+			case "hello":
+				this.status.message("Nice to meet you :)");
+				break;
+			default:
+				this.status.message("Unknown command: " + argv[0]);
 		}
 	}
 
@@ -231,6 +269,8 @@ export class Editor extends Div {
 
 		switch (mode) {
 			case EditorMode.Normal:
+				if (this.mode == EditorMode.Ex)
+					this.lastBuffer.attachCursor(this.cursor);
 				this.cursor.setShape(CursorShape.Block);
 				this.cursor.delLR();
 				break;
