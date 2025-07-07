@@ -10,7 +10,7 @@
 	display: block;
 	position: absolute;
 	top: 1.15em;
-	left: 1em;
+	left: 0em;
 	right: 1em;
 	bottom: 2.5em;
 }
@@ -19,7 +19,7 @@
 	display: block;
 	position: relative;
 	counter-reset: line;
-	padding-left: 2em;
+	padding-left: 1em;
 }
 
 .editor-tab-pane .editor-buffer div {
@@ -30,16 +30,20 @@
 	white-space: pre-wrap;
 	color: transparent;
 	text-shadow: 0 0 black;
+	text-overflow: clip;
+	overflow: hidden;
+	padding-left: 2em;
 }
 
 .editor-tab-pane .editor-buffer div:before {
 	content: counter(line);
 	counter-increment: line;
 	position: absolute;
-	right: calc(100% + 0.6em);
+	left: -1.5em;
 	opacity: 0.5;
-	width: 2em;
+	width: 3em;
 	text-align: right;
+	display: inline-block;
 }
 
 .editor-status-pane .editor-buffer {
