@@ -13,6 +13,42 @@ enum EditorMode {
 	Ex,
 }
 
+enum InputPending {
+	Register,
+	Command,
+	Count,
+	None,
+}
+
+class InputState {
+	count: number = 1;
+	register: string = '"';
+	pending: InputPending = InputPending.None;
+
+	update(key: string): boolean {
+		if (this.pending === InputPending.None) {
+			this.count = 1;
+			this.register = '"';
+		}
+
+		if (this.pending === InputPending.Register && /^[+"]$/.test(key)) {
+			this.register = key;
+			this.pending = InputPending.Command;
+		} else if (this.pending === InputPending.Count && /^[1-9]$/.test(key)) {
+			this.count = this.count * 10 + parseInt(key);
+		} else if (/^[1-9]$/.test(key)) {
+			this.count = parseInt(key);
+			this.pending = InputPending.Count;
+		} else if (key === '"') {
+			this.pending = InputPending.Register;
+		} else {
+			this.pending = InputPending.None;
+		}
+
+		return this.pending !== InputPending.None;
+	}
+}
+
 export class Editor extends Div {
 	status: Status;
 	tabs: Tab[] = [];
@@ -66,7 +102,7 @@ export class Editor extends Div {
 
 	handleKey(): void {
 		let ctrl = false;
-		let count = 0;
+		const state = new InputState();
 
 		this.node.addEventListener("keyup", (key: KeyboardEvent) => {
 			switch (key.key) {
@@ -92,12 +128,7 @@ export class Editor extends Div {
 			const key = (ctrl ? "Control+" : "") + event.key;
 
 			if (this.mode === EditorMode.Normal) {
-				if (key !== "0" && /^\d$/.test(key)) {
-					count = count * 10 + parseInt(key);
-				} else {
-					this.handleNormalModeKey(key, count === 0 ? 1 : count);
-					count = 0;
-				}
+				this.handleNormalModeKey(key, state);
 			} else if (this.mode == EditorMode.Insert) {
 				this.handleInsertModeKey(key);
 			} else if (this.mode == EditorMode.Ex) {
@@ -114,7 +145,9 @@ export class Editor extends Div {
 		return false;
 	}
 
-	handleNormalModeKey(key: string, count: number): void {
+	handleNormalModeKey(key: string, state: InputState): void {
+		if (state.update(key)) return;
+
 		switch (key) {
 			case "I":
 				this.cursor.moveL(this.line().lengthL());
@@ -159,11 +192,11 @@ export class Editor extends Div {
 				this.cursor.moveU();
 				break;
 			case "h":
-				this.cursor.moveL(count);
+				this.cursor.moveL(state.count);
 				this.cursor.save();
 				break;
 			case "l":
-				this.cursor.moveR(count);
+				this.cursor.moveR(state.count);
 				this.cursor.save();
 				break;
 			case "x":
