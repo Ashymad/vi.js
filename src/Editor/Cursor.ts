@@ -19,8 +19,6 @@ export class Cursor extends Span {
 
 		this.text = this.appendText(Cursor.newlineString);
 		this.line = line;
-
-		line.attachCursor(this);
 	}
 
 	attachLine(line: Line, column: number = this.column): Line {
@@ -116,11 +114,25 @@ export class Cursor extends Span {
 	}
 
 	moveR(len = 1): void {
+		this.line.buffer.disable_reflow();
 		this.line.pushL(this.delR(len));
+		this.line.buffer.enable_reflow();
 	}
 
 	moveL(len = 1): void {
+		this.line.buffer.disable_reflow();
 		this.line.pushR(this.delL(len));
+		this.line.buffer.enable_reflow();
+	}
+
+	moveU(): void {
+		const line = this.line.prev();
+		if (line !== null) line.attachCursor(this);
+	}
+
+	moveD(): void {
+		const line = this.line.next();
+		if (line !== null) line.attachCursor(this);
 	}
 
 	save(): void {

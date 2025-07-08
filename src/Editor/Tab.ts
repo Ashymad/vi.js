@@ -10,8 +10,6 @@ export class Tab extends Div {
 		super("editor-tab");
 
 		this.editor = editor;
-
-		editor.attachTab(this);
 	}
 
 	attachPane(pane: TabPane = new TabPane(this)): TabPane {
@@ -21,14 +19,5 @@ export class Tab extends Div {
 			pane.attachTab(this);
 		}
 		return pane;
-	}
-
-	attachEditor(editor: Editor): Editor {
-		if (this.editor !== editor) {
-			this.editor = editor;
-
-			editor.attachTab(this);
-		}
-		return editor;
 	}
 }

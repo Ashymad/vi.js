@@ -1,6 +1,8 @@
 import { Div } from "./Element.ts";
 
 import { Buffer } from "./Editor/Buffer.ts";
+import { Pane } from "./Editor/Pane.ts";
+import { Line } from "./Editor/Line.ts";
 import { Status } from "./Editor/Status.ts";
 import { Cursor, CursorShape } from "./Editor/Cursor.ts";
 import { Tab } from "./Editor/Tab.ts";
@@ -26,12 +28,26 @@ export class Editor extends Div {
 		this.node.spellcheck = false;
 
 		this.lastBuffer = this.attachTab().attachPane().attachBuffer();
-		this.cursor = new Cursor(this.lastBuffer.attachLine());
+		this.cursor = this.lastBuffer.attachCursor();
 
-		this.status = new Status(this);
+		this.status = this.appendChild(new Status(this));
 
 		this.status.message("Welcome to vi.js :)");
 		this.handleKey();
+	}
+
+	line(): Line {
+		return this.cursor.line;
+	}
+
+	buffer(): Buffer {
+		return this.line().buffer;
+	}
+
+	pane(): Pane {
+		const pane = this.buffer().pane;
+		if (pane === null) throw Error("Cursor in a Buffer not attached to a Pane");
+		return pane;
 	}
 
 	attachBuffer(buffer: Buffer = new Buffer()): Buffer {
@@ -44,19 +60,8 @@ export class Editor extends Div {
 	attachTab(tab: Tab = new Tab(this)): Tab {
 		if (!this.tabs.includes(tab)) {
 			this.tabs.push(this.appendChild(tab));
-
-			tab.attachEditor(this);
 		}
 		return tab;
-	}
-
-	attachStatus(status: Status = new Status(this)): Status {
-		if (this.status !== status) {
-			this.status = this.appendChild(status);
-
-			status.attachEditor(this);
-		}
-		return status;
 	}
 
 	handleKey(): void {
@@ -87,15 +92,12 @@ export class Editor extends Div {
 			const key = (ctrl ? "Control+" : "") + event.key;
 
 			if (this.mode === EditorMode.Normal) {
-				if (/^\d$/.test(key)) {
+				if (key !== "0" && /^\d$/.test(key)) {
 					count = count * 10 + parseInt(key);
 				} else {
 					this.handleNormalModeKey(key, count === 0 ? 1 : count);
 					count = 0;
 				}
-			} else if (key.length == 1) {
-				this.cursor.line.pushL(key);
-				this.cursor.save();
 			} else if (this.mode == EditorMode.Insert) {
 				this.handleInsertModeKey(key);
 			} else if (this.mode == EditorMode.Ex) {
@@ -106,7 +108,7 @@ export class Editor extends Div {
 
 	handleSimpleInput(key: string): boolean {
 		if (key.length == 1) {
-			this.cursor.line.pushL(key);
+			this.line().pushL(key);
 			return true;
 		}
 		return false;
@@ -115,7 +117,7 @@ export class Editor extends Div {
 	handleNormalModeKey(key: string, count: number): void {
 		switch (key) {
 			case "I":
-				this.cursor.moveL(this.cursor.line.lengthL());
+				this.cursor.moveL(this.line().lengthL());
 			/* falls through */
 			case "i":
 				this.switchMode(EditorMode.Insert);
@@ -123,7 +125,7 @@ export class Editor extends Div {
 				this.cursor.save();
 				break;
 			case "A":
-				this.cursor.moveR(this.cursor.line.lengthR());
+				this.cursor.moveR(this.line().lengthR());
 			/* falls through */
 			case "a":
 				this.switchMode(EditorMode.Insert);
@@ -133,22 +135,28 @@ export class Editor extends Div {
 			case "o":
 				this.switchMode(EditorMode.Insert);
 				this.cursor.bleL();
-				this.cursor.line.buffer
-					.attachLine(this.cursor.line.index + 1)
+				this.buffer()
+					.attachLine(this.line().index + 1)
 					.attachCursor(this.cursor);
 				break;
 			case "O":
 				this.switchMode(EditorMode.Insert);
 				this.cursor.bleL();
-				this.cursor.line.buffer
-					.attachLine(this.cursor.line.index)
-					.attachCursor(this.cursor);
+				this.buffer().attachLine(this.line().index).attachCursor(this.cursor);
+				break;
+			case "$":
+				this.cursor.moveR(this.line().lengthR());
+				this.cursor.save();
+				break;
+			case "0":
+				this.cursor.moveL(this.line().lengthL());
+				this.cursor.save();
 				break;
 			case "j":
-				this.cursor.line.next().attachCursor(this.cursor);
+				this.cursor.moveD();
 				break;
 			case "k":
-				this.cursor.line.prev().attachCursor(this.cursor);
+				this.cursor.moveU();
 				break;
 			case "h":
 				this.cursor.moveL(count);
@@ -191,14 +199,14 @@ export class Editor extends Div {
 				this.cursor.save();
 				break;
 			case "ArrowUp":
-				this.cursor.line.prev().attachCursor(this.cursor);
+				this.cursor.moveU();
 				break;
 			case "ArrowDown":
-				this.cursor.line.next().attachCursor(this.cursor);
+				this.cursor.moveD();
 				break;
 			case "Enter":
-				this.cursor.line.buffer
-					.attachLine(this.cursor.line.index + 1)
+				this.buffer()
+					.attachLine(this.line().index + 1)
 					.attachCursor(this.cursor);
 				break;
 			case "Control+c":
@@ -217,13 +225,13 @@ export class Editor extends Div {
 
 		switch (key) {
 			case "ArrowLeft":
-				if (this.cursor.line.lengthL() > 1) this.cursor.moveL();
+				if (this.line().lengthL() > 1) this.cursor.moveL();
 				break;
 			case "ArrowRight":
 				this.cursor.moveR();
 				break;
 			case "Backspace":
-				if (this.cursor.line.lengthL() > 1) this.cursor.delL();
+				if (this.line().lengthL() > 1) this.cursor.delL();
 				break;
 			case "Control+c":
 			case "Escape":
@@ -232,9 +240,9 @@ export class Editor extends Div {
 				break;
 			case "Enter":
 				this.switchMode(EditorMode.Normal);
-				if (this.status.info.lengthL() > 1)
+				if (this.status.line.lengthL() > 1)
 					this.executeExCommand(
-						this.status.info.popL(this.status.info.lengthL() - 1),
+						this.status.line.popL(this.status.line.lengthL() - 1),
 					);
 				else this.status.message("");
 				break;
@@ -276,9 +284,9 @@ export class Editor extends Div {
 			case EditorMode.Ex:
 				this.cursor.setShape(CursorShape.Bar);
 				this.cursor.bleR();
-				this.lastBuffer = this.cursor.line.buffer;
+				this.lastBuffer = this.buffer();
 				this.status.message(":");
-				this.status.info.attachCursor(this.cursor, 1);
+				this.status.line.attachCursor(this.cursor, 1);
 				break;
 			case EditorMode.Insert:
 				this.cursor.setShape(CursorShape.Bar);

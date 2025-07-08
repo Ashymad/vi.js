@@ -30,8 +30,6 @@ export class TabPane extends Pane {
 		super(tab.editor, "tab");
 
 		this.tab = tab;
-
-		tab.attachPane(this);
 	}
 
 	attachTab(tab: Tab): Tab {

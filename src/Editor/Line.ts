@@ -16,22 +16,30 @@ export class Line extends Div {
 		this.lText = this.appendText("");
 		this.buffer = buffer;
 		this.index = index;
-
-		buffer.attachLine(index, this);
 	}
 
-	next(): Line {
+	next(): Line | null {
 		return this.buffer.lines.length > this.index + 1
 			? this.buffer.lines[this.index + 1]
-			: this;
+			: null;
 	}
 
-	prev(): Line {
-		return this.index > 0 ? this.buffer.lines[this.index - 1] : this;
+	prev(): Line | null {
+		return this.index > 0 ? this.buffer.lines[this.index - 1] : null;
 	}
 
 	setL(text: string): void {
+		const pre = this.scrollHeight();
 		this.lText.textContent = text;
+		if (this.scrollHeight() != pre) this.buffer.reflow();
+	}
+
+	setR(text: string): void {
+		if (this.rText !== null) {
+			const pre = this.scrollHeight();
+			this.rText.textContent = text;
+			if (this.scrollHeight() != pre) this.buffer.reflow();
+		}
 	}
 
 	lengthL(): number {
@@ -45,12 +53,13 @@ export class Line extends Div {
 	}
 
 	pushL(text: string | null): void {
-		if (text !== null) this.lText.textContent += text;
+		if (text !== null && text.length > 0)
+			this.setL(this.lText.textContent + text);
 	}
 
 	pushR(text: string | null): void {
-		if (text !== null && this.rText !== null)
-			this.rText.textContent = text + this.rText.textContent;
+		if (text !== null && this.rText !== null && text.length > 0)
+			this.setR(text + this.rText.textContent);
 	}
 
 	popL(len = 1): string | null {
@@ -62,7 +71,7 @@ export class Line extends Div {
 			len = Math.min(len, this.lText.textContent.length);
 
 			const text = this.lText.textContent.slice(-len);
-			this.lText.textContent = this.lText.textContent.slice(0, -len);
+			this.setL(this.lText.textContent.slice(0, -len));
 			return text;
 		}
 		return null;
@@ -78,7 +87,7 @@ export class Line extends Div {
 			len = Math.min(len, this.rText.textContent.length);
 
 			const text = this.rText.textContent.slice(0, len);
-			this.rText.textContent = this.rText.textContent.slice(len);
+			this.setR(this.rText.textContent.slice(len));
 			return text;
 		}
 		return null;
@@ -116,6 +125,12 @@ export class Line extends Div {
 
 	hide(): void {
 		this.node.classList.add("invisible");
+		this.visible = false;
+	}
+
+	show(): void {
+		this.node.classList.remove("invisible");
+		this.visible = true;
 	}
 
 	attachBuffer(index: number, buffer: Buffer): Buffer {
