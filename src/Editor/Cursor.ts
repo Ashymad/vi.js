@@ -76,8 +76,7 @@ export class Cursor extends Span {
 		this.line.pushL(this.eat(""));
 	}
 
-	delR(len = 1): string | null {
-		let text = this.line.popR(len);
+	eatR(text: string | null): string | null {
 		if (text !== null) {
 			const out = this.eat(text.slice(-1));
 			text = out + text.slice(0, text.length - out.length);
@@ -85,13 +84,20 @@ export class Cursor extends Span {
 		return text;
 	}
 
-	delL(len = 1): string | null {
-		let text = this.line.popL(len);
+	eatL(text: string | null): string | null {
 		if (text !== null) {
 			const out = this.eat(text.slice(0, 1));
 			text = text.slice(out.length) + out;
 		}
 		return text;
+	}
+
+	delR(len = 1): string | null {
+		return this.eatR(this.line.popR(len));
+	}
+
+	delL(len = 1): string | null {
+		return this.eatL(this.line.popL(len));
 	}
 
 	delLR(): void {

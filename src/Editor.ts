@@ -145,6 +145,14 @@ export class Editor extends Div {
 		return false;
 	}
 
+	paste(register: string) {
+		if (register == "+") {
+			navigator.clipboard
+				.readText()
+				.then((clipText) => this.line().pushL(this.cursor.eatR(clipText)));
+		}
+	}
+
 	handleNormalModeKey(key: string, state: InputState): void {
 		if (state.update(key)) return;
 
@@ -198,6 +206,9 @@ export class Editor extends Div {
 			case "l":
 				this.cursor.moveR(state.count);
 				this.cursor.save();
+				break;
+			case "p":
+				this.paste(state.register);
 				break;
 			case "x":
 				this.cursor.delRL();
