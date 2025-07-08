@@ -41,13 +41,20 @@ class Element<Type extends HTMLElement> {
 			this.node.removeChild(this.node.lastChild);
 	}
 
-	clientHeight(): number {
-		const lineHeight = parseFloat(
+	lineHeight(): number {
+		return parseFloat(
 			globalThis
 				.getComputedStyle(this.node, null)
 				.getPropertyValue("line-height"),
 		);
-		return Math.floor(this.node.clientHeight / lineHeight);
+	}
+
+	clientHeight(): number {
+		return Math.floor(this.node.clientHeight / this.lineHeight());
+	}
+
+	scrollHeight(): number {
+		return Math.floor(this.node.scrollHeight / this.lineHeight());
 	}
 }
 

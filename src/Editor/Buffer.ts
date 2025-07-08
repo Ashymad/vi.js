@@ -49,12 +49,19 @@ export class Buffer extends Div {
 			for (let i = index + 1; i < this.lines.length; i++) {
 				this.lines[i].index++;
 			}
-			if (this.pane !== null && this.lines.length > this.pane.clientHeight())
-				this.lines[this.pane.clientHeight()].hide();
-
 			line.attachBuffer(index, this);
+			this.reflow();
 		}
 		return line;
+	}
+
+	reflow(
+		line: Line | null = this.cursor === null ? null : this.cursor.line,
+	): void {
+		if (line === null) return;
+
+		if (!line.visible) {
+		}
 	}
 
 	attachPane(pane: Pane): Pane {
