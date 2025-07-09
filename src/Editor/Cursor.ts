@@ -68,28 +68,24 @@ export class Cursor extends Span {
 		return txt;
 	}
 
-	bleR(): void {
-		this.line.pushR(this.eat(""));
+	bleR(txt = ""): void {
+		this.line.pushR(this.eat(txt));
 	}
 
-	bleL(): void {
-		this.line.pushL(this.eat(""));
+	bleL(txt = ""): void {
+		this.line.pushL(this.eat(txt));
 	}
 
 	eatR(text: string | null): string | null {
-		if (text !== null) {
-			const out = this.eat(text.slice(-1));
-			text = out + text.slice(0, text.length - out.length);
-		}
-		return text;
+		return text !== null
+			? this.eat(text.slice(-1)) + text.slice(0, text.length - this.length())
+			: null;
 	}
 
 	eatL(text: string | null): string | null {
-		if (text !== null) {
-			const out = this.eat(text.slice(0, 1));
-			text = text.slice(out.length) + out;
-		}
-		return text;
+		return text !== null
+			? text.slice(this.length()) + this.eat(text.slice(0, 1))
+			: null;
 	}
 
 	delR(len = 1): string | null {

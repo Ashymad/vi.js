@@ -142,4 +142,12 @@ export class Line extends Div {
 		}
 		return buffer;
 	}
+
+	text(): string {
+		return [
+			this.lText.textContent,
+			this.cursor === null ? "" : this.cursor.textContent(),
+			this.rText === null ? "" : this.rText.textContent,
+		].join("");
+	}
 }

@@ -17,8 +17,14 @@ enum InputPending {
 	Register,
 	Command,
 	Count,
+	Delete,
+	Yank,
 	None,
 }
+
+type Registers = {
+	[key: string]: string;
+};
 
 class InputState {
 	count: number = 1;
@@ -31,7 +37,7 @@ class InputState {
 			this.register = '"';
 		}
 
-		if (this.pending === InputPending.Register && /^[+"]$/.test(key)) {
+		if (this.pending === InputPending.Register && /^[*+"]$/.test(key)) {
 			this.register = key;
 			this.pending = InputPending.Command;
 		} else if (this.pending === InputPending.Count && /^[1-9]$/.test(key)) {
@@ -41,6 +47,10 @@ class InputState {
 			this.pending = InputPending.Count;
 		} else if (key === '"') {
 			this.pending = InputPending.Register;
+		} else if (this.pending === InputPending.None && key === "d") {
+			this.pending = InputPending.Delete;
+		} else if (this.pending === InputPending.None && key === "y") {
+			this.pending = InputPending.Yank;
 		} else {
 			this.pending = InputPending.None;
 		}
@@ -55,6 +65,7 @@ export class Editor extends Div {
 	buffers: Buffer[] = [];
 	cursor: Cursor;
 	mode: EditorMode = EditorMode.Normal;
+	registers: Registers = {};
 
 	lastBuffer: Buffer;
 
@@ -136,7 +147,6 @@ export class Editor extends Div {
 			}
 		});
 	}
-
 	handleSimpleInput(key: string): boolean {
 		if (key.length == 1) {
 			this.line().pushL(key);
@@ -145,11 +155,71 @@ export class Editor extends Div {
 		return false;
 	}
 
-	paste(register: string) {
-		if (register == "+") {
+	pasteLines(lines: Array<string>, at: number, attach = 0) {
+		for (let i = 1; i < lines.length; i++) {
+			const line = this.buffer().attachLine(at + i);
+			line.pushL(lines[i].trimEnd());
+			if (i === attach)
+				line.attachCursor(this.cursor, line.text().search(/\S|$/));
+		}
+	}
+
+	pasteText(text: string, before: boolean) {
+		if (text.length === 0) return;
+
+		const lines = text.split(/\r\n|\r|\n/);
+
+		if (before) {
+			if (lines.length === 1) {
+				this.cursor.bleR(text.slice(-1));
+				this.line().pushL(text.slice(0, text.length - this.cursor.length()));
+			} else if (lines[0].length === 0) {
+				this.pasteLines(lines, this.line().index - 1, 1);
+			} else {
+				const first = lines[0].trimEnd();
+				const saved =
+					this.cursor.eat(first.slice(0, 1)) +
+					this.line().popR(this.line().lengthR());
+				this.line().pushR(first.slice(this.cursor.length()));
+				this.pasteLines(lines, this.line().index, 0);
+				this.buffer().lines[this.line().index - 1 + lines.length].pushL(saved);
+			}
+		} else {
+			if (lines.length === 1) {
+				this.line().pushL(this.cursor.eatR(text));
+			} else if (lines[0].length === 0) {
+				this.pasteLines(lines, this.line().index, 1);
+			} else {
+				const first = lines[0].trimEnd();
+				const saved = this.line().popR(this.line().lengthR());
+				this.cursor.bleL(first.slice(0, 1));
+				this.line().pushR(first.slice(this.cursor.length()));
+				this.pasteLines(lines, this.line().index, 0);
+				this.buffer().lines[this.line().index - 1 + lines.length].pushL(saved);
+			}
+		}
+
+		this.cursor.save();
+	}
+
+	paste(register: string, before = false) {
+		if (register === "+" || register === "*") {
+			this.status.message("Hint: You can press 'p' to confirm paste");
 			navigator.clipboard
 				.readText()
-				.then((clipText) => this.line().pushL(this.cursor.eatR(clipText)));
+				.then((clipText) => {
+					this.pasteText(clipText, before);
+					this.status.message("");
+				})
+				.catch((error) => {
+					if (error instanceof DOMException)
+						this.status.message("Error: " + error.message);
+				});
+		} else if (/^["]$/.test(register)) {
+			const text = this.registers[register];
+			if (text !== undefined) this.pasteText(text, before);
+		} else {
+			this.status.message("Error: unknown register: '" + register + "'");
 		}
 	}
 
@@ -193,6 +263,10 @@ export class Editor extends Div {
 				this.cursor.moveL(this.line().lengthL());
 				this.cursor.save();
 				break;
+			case "^":
+				this.cursor.moveTo(this.line().text().search(/\S|$/));
+				this.cursor.save();
+				break;
 			case "j":
 				this.cursor.moveD();
 				break;
@@ -207,8 +281,24 @@ export class Editor extends Div {
 				this.cursor.moveR(state.count);
 				this.cursor.save();
 				break;
+			case "y":
+				{
+					let yanked = "";
+					for (
+						let i = 0, line: Line | null = this.line();
+						i < state.count && line !== null;
+						i++, line = line.next()
+					) {
+						yanked += "\n" + line.text();
+					}
+					this.registers[state.register] = yanked;
+				}
+				break;
 			case "p":
 				this.paste(state.register);
+				break;
+			case "P":
+				this.paste(state.register, true);
 				break;
 			case "x":
 				this.cursor.delRL();
