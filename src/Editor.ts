@@ -17,6 +17,8 @@ enum InputPending {
 	Register,
 	Command,
 	Count,
+	Replace,
+	Input,
 	Delete,
 	Yank,
 	None,
@@ -30,16 +32,21 @@ class InputState {
 	count: number = 1;
 	register: string = '"';
 	pending: InputPending = InputPending.None;
+	replacement: string = "";
 
 	update(key: string): boolean {
 		if (this.pending === InputPending.None) {
 			this.count = 1;
 			this.register = '"';
+			this.replacement = "";
 		}
 
 		if (this.pending === InputPending.Register && /^[*+"]$/.test(key)) {
 			this.register = key;
 			this.pending = InputPending.Command;
+		} else if (this.pending === InputPending.Replace && key.length === 1) {
+			this.replacement = key;
+			this.pending = InputPending.None;
 		} else if (this.pending === InputPending.Count && /^[1-9]$/.test(key)) {
 			this.count = this.count * 10 + parseInt(key);
 		} else if (/^[1-9]$/.test(key)) {
@@ -49,6 +56,8 @@ class InputState {
 			this.pending = InputPending.Register;
 		} else if (this.pending === InputPending.None && key === "d") {
 			this.pending = InputPending.Delete;
+		} else if (this.pending === InputPending.None && key === "r") {
+			this.pending = InputPending.Replace;
 		} else if (this.pending === InputPending.None && key === "y") {
 			this.pending = InputPending.Yank;
 		} else {
@@ -147,6 +156,7 @@ export class Editor extends Div {
 			}
 		});
 	}
+
 	handleSimpleInput(key: string): boolean {
 		if (key.length == 1) {
 			this.line().pushL(key);
@@ -171,8 +181,7 @@ export class Editor extends Div {
 
 		if (before) {
 			if (lines.length === 1) {
-				this.cursor.bleR(text.slice(-1));
-				this.line().pushL(text.slice(0, text.length - this.cursor.length()));
+				this.line().pushL(this.cursor.bleR(text));
 			} else if (lines[0].length === 0) {
 				this.pasteLines(lines, this.line().index - 1, 1);
 			} else {
@@ -190,10 +199,8 @@ export class Editor extends Div {
 			} else if (lines[0].length === 0) {
 				this.pasteLines(lines, this.line().index, 1);
 			} else {
-				const first = lines[0].trimEnd();
 				const saved = this.line().popR(this.line().lengthR());
-				this.cursor.bleL(first.slice(0, 1));
-				this.line().pushR(first.slice(this.cursor.length()));
+				this.line().pushR(this.cursor.bleL(lines[0].trimEnd()));
 				this.pasteLines(lines, this.line().index, 0);
 				this.buffer().lines[this.line().index - 1 + lines.length].pushL(saved);
 			}
@@ -225,6 +232,11 @@ export class Editor extends Div {
 
 	handleNormalModeKey(key: string, state: InputState): void {
 		if (state.update(key)) return;
+
+		if (state.replacement.length > 0) {
+			this.cursor.eat(state.replacement);
+			return;
+		}
 
 		switch (key) {
 			case "I":

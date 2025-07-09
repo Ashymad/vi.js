@@ -68,12 +68,14 @@ export class Cursor extends Span {
 		return txt;
 	}
 
-	bleR(txt = ""): void {
-		this.line.pushR(this.eat(txt));
+	bleR(text = ""): string {
+		this.line.pushR(this.eat(text.slice(-1)));
+		return text.slice(0, text.length - this.length());
 	}
 
-	bleL(txt = ""): void {
-		this.line.pushL(this.eat(txt));
+	bleL(text = ""): string {
+		this.line.pushL(this.eat(text.slice(0, 1)));
+		return text.slice(this.length());
 	}
 
 	eatR(text: string | null): string | null {
