@@ -12,4 +12,7 @@ export default defineConfig({
 		favicon: "./src/assets/favicon.png",
 		title: "Vi.js",
 	},
+	output: {
+		assetPrefix: "/vi.js/",
+	},
 });
