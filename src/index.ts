@@ -21,7 +21,7 @@ if (rootEl) {
                 <span class="dib titlebar-button br-100 bg-green"></span>
             </div>
         </div>
-        <div id="app-window" class="window bg-white pt3 light-silver br2 br--bottom">
+        <div id="app-window" class="window bg-white o-90 pt3 light-silver br2 br--bottom">
             <div id="editor-window" class="window-content ph3 ma0 code"></div>
         </div>
     </div>

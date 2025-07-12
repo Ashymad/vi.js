@@ -54,17 +54,21 @@ class InputState {
 			this.pending = InputPending.Count;
 		} else if (key === '"') {
 			this.pending = InputPending.Register;
-		} else if (this.pending === InputPending.None && key === "d") {
+		} else if (this.pending !== InputPending.Delete && key === "d") {
 			this.pending = InputPending.Delete;
-		} else if (this.pending === InputPending.None && key === "r") {
+		} else if (this.pending !== InputPending.Replace && key === "r") {
 			this.pending = InputPending.Replace;
-		} else if (this.pending === InputPending.None && key === "y") {
+		} else if (this.pending !== InputPending.Yank && key === "y") {
 			this.pending = InputPending.Yank;
 		} else {
 			this.pending = InputPending.None;
 		}
 
 		return this.pending !== InputPending.None;
+	}
+
+	replace(): boolean {
+		return this.replacement.length > 0;
 	}
 }
 
@@ -233,8 +237,15 @@ export class Editor extends Div {
 	handleNormalModeKey(key: string, state: InputState): void {
 		if (state.update(key)) return;
 
-		if (state.replacement.length > 0) {
-			this.cursor.eat(state.replacement);
+		if (state.replace()) {
+			const count = state.count - 1;
+			if (this.line().lengthR() >= count) {
+				this.cursor.eat(state.replacement);
+				if (count > 0) {
+					this.line().popR(count);
+					this.line().pushR(state.replacement.repeat(count));
+				}
+			}
 			return;
 		}
 
