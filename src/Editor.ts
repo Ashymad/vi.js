@@ -13,7 +13,7 @@ enum EditorMode {
 	Ex,
 }
 
-enum InputPending {
+enum Input {
 	Register,
 	Command,
 	Count,
@@ -31,44 +31,60 @@ type Registers = {
 class InputState {
 	count: number = 1;
 	register: string = '"';
-	pending: InputPending = InputPending.None;
-	replacement: string = "";
+	pending: Input = Input.None;
+	replace: boolean = false;
+	delete: boolean = false;
+	yank: boolean = false;
+
+	reset() {
+		this.count = 1;
+		this.register = '"';
+		this.replace = false;
+		this.delete = false;
+		this.yank = false;
+	}
 
 	update(key: string): boolean {
-		if (this.pending === InputPending.None) {
-			this.count = 1;
-			this.register = '"';
-			this.replacement = "";
+		switch (this.pending) {
+			case Input.None:
+				this.reset();
+				break;
+			case Input.Replace:
+				this.replace = key.length === 1;
+				break;
+			case Input.Yank:
+				this.yank = true;
+				break;
+			case Input.Delete:
+				this.delete = true;
+				break;
 		}
 
-		if (this.pending === InputPending.Register && /^[*+"]$/.test(key)) {
+		if (this.pending === Input.Register && /^[*+"]$/.test(key)) {
 			this.register = key;
-			this.pending = InputPending.Command;
-		} else if (this.pending === InputPending.Replace && key.length === 1) {
-			this.replacement = key;
-			this.pending = InputPending.None;
-		} else if (this.pending === InputPending.Count && /^[1-9]$/.test(key)) {
+			this.pending = Input.Command;
+		} else if (this.pending === Input.Count && /^[1-9]$/.test(key)) {
 			this.count = this.count * 10 + parseInt(key);
 		} else if (/^[1-9]$/.test(key)) {
 			this.count = parseInt(key);
-			this.pending = InputPending.Count;
+			this.pending = Input.Count;
 		} else if (key === '"') {
-			this.pending = InputPending.Register;
-		} else if (this.pending !== InputPending.Delete && key === "d") {
-			this.pending = InputPending.Delete;
-		} else if (this.pending !== InputPending.Replace && key === "r") {
-			this.pending = InputPending.Replace;
-		} else if (this.pending !== InputPending.Yank && key === "y") {
-			this.pending = InputPending.Yank;
+			this.pending = Input.Register;
+		} else if (!this.verb() && key === "d") {
+			this.pending = Input.Delete;
+		} else if (!this.verb() && key === "r") {
+			this.pending = Input.Replace;
+		} else if (!this.verb() && key === "y") {
+			this.pending = Input.Yank;
 		} else {
-			this.pending = InputPending.None;
+			this.pending = Input.None;
 		}
 
-		return this.pending !== InputPending.None;
+		return this.pending !== Input.None;
 	}
 
-	replace(): boolean {
-		return this.replacement.length > 0;
+	verb(): boolean {
+		return this.replace || this.delete || this.yank;
 	}
 }
 
@@ -237,13 +253,13 @@ export class Editor extends Div {
 	handleNormalModeKey(key: string, state: InputState): void {
 		if (state.update(key)) return;
 
-		if (state.replace()) {
+		if (state.replace) {
 			const count = state.count - 1;
 			if (this.line().lengthR() >= count) {
-				this.cursor.eat(state.replacement);
+				this.cursor.eat(key);
 				if (count > 0) {
 					this.line().popR(count);
-					this.line().pushR(state.replacement.repeat(count));
+					this.line().pushR(key.repeat(count));
 				}
 			}
 			return;
