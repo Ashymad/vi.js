@@ -1,13 +1,18 @@
-class Element<Type extends HTMLElement> {
+export class Element<Type extends HTMLElement> {
 	node: Type;
 
 	constructor(node: Type, cls: string) {
 		this.node = node;
-		this.node.className = cls;
+		if (cls.length > 0) this.node.className = cls;
 	}
 
 	appendChild<U extends HTMLElement, T extends Element<U>>(node: T): T {
 		this.node.appendChild(node.node);
+		return node;
+	}
+
+	appendTo<U extends HTMLElement>(node: U): U {
+		node.appendChild(this.node);
 		return node;
 	}
 
@@ -59,13 +64,19 @@ class Element<Type extends HTMLElement> {
 }
 
 export class Div extends Element<HTMLDivElement> {
-	constructor(cls: string = "") {
-		super(document.createElement("div"), cls);
+	constructor(
+		cls: string = "",
+		el: HTMLDivElement = document.createElement("div"),
+	) {
+		super(el, cls);
 	}
 }
 
 export class Span extends Element<HTMLSpanElement> {
-	constructor(cls: string = "") {
-		super(document.createElement("span"), cls);
+	constructor(
+		cls: string = "",
+		el: HTMLSpanElement = document.createElement("span"),
+	) {
+		super(el, cls);
 	}
 }

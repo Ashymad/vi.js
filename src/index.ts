@@ -1,18 +1,12 @@
 import "tachyons";
 import "./index.css";
 import { Editor } from "./Editor.ts";
-import { makeResizableDiv } from "./Resizable.ts";
+import { Resizable } from "./Resizable.ts";
 
 const rootEl = document.querySelector("#root");
 if (rootEl) {
 	rootEl.innerHTML = `
 <div id="console-app-container" class="console-app fl mh3 mv2">
-    <div class='resizers'>
-        <div class='resizer top-left'></div>
-        <div class='resizer top-right'></div>
-        <div class='resizer bottom-left'></div>
-        <div class='resizer bottom-right'></div>
-    </div>
     <div id="shadow" class="shadow-3 br3">
         <div id="window-titlebar" class="titlebar bg-near-black pv2 br3 br--top">
             <div class="dib titlebar-buttons ml1 mr5 pl2">
@@ -32,11 +26,18 @@ if (rootEl) {
 const editor_window: HTMLDivElement | null =
 	document.querySelector("#editor-window");
 
-makeResizableDiv("#console-app-container");
+const console_app: HTMLDivElement | null = document.querySelector(
+	"#console-app-container",
+);
+
+if (editor_window === null || console_app === null)
+	throw Error("Couldn't find the editor window or the console app container");
 
 globalThis.editor = new Editor();
+globalThis.editor.appendTo(editor_window);
 
-if (editor_window !== null) {
-	editor_window.appendChild(globalThis.editor.node);
-	editor_window.focus();
-}
+const resizable = new Resizable(console_app);
+
+resizable.enable();
+
+editor_window.focus();
