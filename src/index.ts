@@ -30,14 +30,20 @@ const console_app: HTMLDivElement | null = document.querySelector(
 	"#console-app-container",
 );
 
-if (editor_window === null || console_app === null)
+const titlebar: HTMLDivElement | null =
+	document.querySelector("#window-titlebar");
+
+if (editor_window === null || console_app === null || titlebar === null)
 	throw Error("Couldn't find the editor window or the console app container");
 
 globalThis.editor = new Editor();
 globalThis.editor.appendTo(editor_window);
 
-const resizable = new Resizable(console_app);
-
-resizable.enable();
+globalThis.resizable = new Resizable(console_app);
+globalThis.resizable.enable();
+globalThis.resizable.addMovable(titlebar);
+globalThis.resizable.atResize(() => {
+	globalThis.editor.buffer().reflow();
+});
 
 editor_window.focus();
