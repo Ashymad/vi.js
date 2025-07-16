@@ -22,6 +22,10 @@ class Coordinate {
 		return this.clamp(this.val + val);
 	}
 
+	dadd(val: number): number {
+		return this.add(val) - this.val;
+	}
+
 	dsub(val: number): number {
 		return this.sub(val) - this.val;
 	}
@@ -134,12 +138,6 @@ export class Resizable extends Div {
 		this.top.set(this.node.getBoundingClientRect().top);
 		this.left.set(this.node.getBoundingClientRect().left);
 
-		this.width.max = document.documentElement.clientWidth - this.left.get();
-		this.height.max = document.documentElement.clientHeight - this.top.get();
-
-		this.left.max = document.documentElement.clientWidth - this.width.get();
-		this.top.max = document.documentElement.clientHeight - this.height.get();
-
 		this.x.set(x);
 		this.y.set(y);
 	}
@@ -152,25 +150,25 @@ export class Resizable extends Div {
 
 		this.width.max = null;
 		this.height.max = null;
-		this.left.max = null;
 		this.top.max = null;
+		this.left.max = null;
 	}
 
 	static resizeBottomRight = Resizable.resize;
 
 	static resizeBottomLeft(t: Resizable, dx: number, dy: number) {
-		t.resize(-t.left.dsub(t.width.dsub(dx)), dy);
 		t.move(-t.width.dsub(dx), 0);
+		t.resize(-t.left.dsub(t.width.dsub(dx)), dy);
 	}
 
 	static resizeTopRight(t: Resizable, dx: number, dy: number) {
-		t.resize(dx, -t.top.dsub(t.height.dsub(dy)));
 		t.move(0, -t.height.dsub(dy));
+		t.resize(dx, -t.top.dsub(t.height.dsub(dy)));
 	}
 
 	static resizeTopLeft(t: Resizable, dx: number, dy: number) {
-		t.resize(-t.left.dsub(t.width.dsub(dx)), -t.top.dsub(t.height.dsub(dy)));
 		t.move(-t.width.dsub(dx), -t.height.dsub(dy));
+		t.resize(-t.left.dsub(t.width.dsub(dx)), -t.top.dsub(t.height.dsub(dy)));
 	}
 
 	static move(t: Resizable, dx: number, dy: number) {
@@ -178,11 +176,17 @@ export class Resizable extends Div {
 	}
 
 	move(dx: number, dy: number) {
+		this.left.max =
+			document.documentElement.clientWidth - parseFloat(this.node.style.width);
+		this.top.max =
+			document.documentElement.clientHeight -
+			parseFloat(this.node.style.height);
+
 		this.node.style.left = this.left.add(dx) + "px";
 		this.node.style.top = this.top.add(dy) + "px";
 
-		if (this.width.max !== null) this.width.max -= dx;
-		if (this.height.max !== null) this.height.max -= dy;
+		this.left.max = null;
+		this.top.max = null;
 	}
 
 	static resize(t: Resizable, dx: number, dy: number) {
@@ -190,11 +194,16 @@ export class Resizable extends Div {
 	}
 
 	resize(dx: number, dy: number) {
+		this.width.max =
+			document.documentElement.clientWidth - parseFloat(this.node.style.left);
+		this.height.max =
+			document.documentElement.clientHeight - parseFloat(this.node.style.top);
+
 		this.node.style.width = this.width.add(dx) + "px";
 		this.node.style.height = this.height.add(dy) + "px";
 
-		if (this.left.max !== null) this.left.max -= dx;
-		if (this.top.max !== null) this.top.max -= dy;
+		this.width.max = null;
+		this.height.max = null;
 
 		if (this.resize_cb !== null) this.resize_cb();
 	}
