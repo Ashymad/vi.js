@@ -19,6 +19,7 @@ enum Input {
 	Count,
 	Replace,
 	Input,
+	Go,
 	Delete,
 	Yank,
 	None,
@@ -35,6 +36,7 @@ class InputState {
 	replace: boolean = false;
 	delete: boolean = false;
 	yank: boolean = false;
+	go: boolean = false;
 
 	reset() {
 		this.count = 1;
@@ -42,6 +44,7 @@ class InputState {
 		this.replace = false;
 		this.delete = false;
 		this.yank = false;
+		this.go = false;
 	}
 
 	update(key: string): boolean {
@@ -54,6 +57,9 @@ class InputState {
 				break;
 			case Input.Yank:
 				this.yank = true;
+				break;
+			case Input.Go:
+				this.go = true;
 				break;
 			case Input.Delete:
 				this.delete = true;
@@ -76,6 +82,8 @@ class InputState {
 			this.pending = Input.Replace;
 		} else if (!this.verb() && key === "y") {
 			this.pending = Input.Yank;
+		} else if (!this.verb() && key === "g") {
+			this.pending = Input.Go;
 		} else {
 			this.pending = Input.None;
 		}
@@ -84,7 +92,7 @@ class InputState {
 	}
 
 	verb(): boolean {
-		return this.replace || this.delete || this.yank;
+		return this.replace || this.delete || this.yank || this.go;
 	}
 }
 
@@ -332,6 +340,13 @@ export class Editor extends Div {
 					}
 					this.registers[state.register] = yanked;
 				}
+				break;
+			case "G":
+				this.buffer().lines.slice(-1)[0].attachCursor(this.cursor);
+				break;
+			case "g":
+				if (state.count <= this.buffer().lines.length)
+					this.buffer().lines[state.count - 1].attachCursor(this.cursor);
 				break;
 			case "p":
 				this.paste(state.register);
