@@ -18,7 +18,6 @@ enum Input {
 	Command,
 	Count,
 	Replace,
-	Input,
 	Go,
 	Delete,
 	Yank,
@@ -47,10 +46,37 @@ class InputState {
 		this.go = false;
 	}
 
+	get_info(): string | null {
+		switch (this.pending) {
+			case Input.Register:
+				return '"';
+			case Input.Command:
+				return this.register;
+			case Input.Count:
+				return ("" + this.count).slice(-1);
+			case Input.Replace:
+				return "r";
+			case Input.Go:
+				return "g";
+			case Input.Delete:
+				return "d";
+			case Input.Yank:
+				return "y";
+			case Input.None:
+				return null;
+		}
+	}
+
 	update(key: string): boolean {
 		switch (this.pending) {
 			case Input.None:
 				this.reset();
+				break;
+			case Input.Count:
+				break;
+			case Input.Register:
+				break;
+			case Input.Command:
 				break;
 			case Input.Replace:
 				this.replace = key.length === 1;
@@ -259,7 +285,13 @@ export class Editor extends Div {
 	}
 
 	handleNormalModeKey(key: string, state: InputState): void {
-		if (state.update(key)) return;
+		const done = state.update(key);
+		const info = state.get_info();
+
+		if (info === null) this.status.status("");
+		else this.status.status(info, true);
+
+		if (done) return;
 
 		if (state.replace) {
 			const count = state.count - 1;
@@ -428,9 +460,9 @@ export class Editor extends Div {
 				break;
 			case "Enter":
 				this.switchMode(EditorMode.Normal);
-				if (this.status.line.lengthL() > 1)
+				if (this.status.cmd.lengthL() > 1)
 					this.executeExCommand(
-						this.status.line.popL(this.status.line.lengthL() - 1),
+						this.status.cmd.popL(this.status.cmd.lengthL() - 1),
 					);
 				else this.status.message("");
 				break;
@@ -474,7 +506,7 @@ export class Editor extends Div {
 				this.cursor.bleR();
 				this.lastBuffer = this.buffer();
 				this.status.message(":");
-				this.status.line.attachCursor(this.cursor, 1);
+				this.status.cmd.attachCursor(this.cursor, 1);
 				break;
 			case EditorMode.Insert:
 				this.cursor.setShape(CursorShape.Bar);

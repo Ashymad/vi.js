@@ -117,7 +117,7 @@ body {
 }
 
 .editor-status-pane .editor-buffer div {
-	display: block;
+	display: inline-block;
 	position: relative;
 	min-height: 1.15em;
 	word-break: break-all;
