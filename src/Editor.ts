@@ -233,31 +233,24 @@ export class Editor extends Div {
 
 		const lines = text.split(/\r\n|\r|\n/);
 
-		if (before) {
-			if (lines.length === 1) {
-				this.line().pushL(this.cursor.bleR(text));
-			} else if (lines[0].length === 0) {
-				this.pasteLines(lines, this.line().index - 1, 1);
-			} else {
-				const first = lines[0].trimEnd();
-				const saved =
-					this.cursor.eat(first.slice(0, 1)) +
-					this.line().popR(this.line().lengthR());
-				this.line().pushR(first.slice(this.cursor.length()));
-				this.pasteLines(lines, this.line().index, 0);
-				this.buffer().lines[this.line().index - 1 + lines.length].pushL(saved);
-			}
+		if (lines.length === 1) {
+			this.line().pushL(
+				before ? this.cursor.bleR(text) : this.cursor.eatR(text),
+			);
+		} else if (lines[0].length === 0) {
+			this.pasteLines(lines, this.line().index - (before ? 1 : 0), 1);
 		} else {
-			if (lines.length === 1) {
-				this.line().pushL(this.cursor.eatR(text));
-			} else if (lines[0].length === 0) {
-				this.pasteLines(lines, this.line().index, 1);
-			} else {
-				const saved = this.line().popR(this.line().lengthR());
-				this.line().pushR(this.cursor.bleL(lines[0].trimEnd()));
-				this.pasteLines(lines, this.line().index, 0);
-				this.buffer().lines[this.line().index - 1 + lines.length].pushL(saved);
-			}
+			const first = lines[0].trimEnd();
+			const saved =
+				(before ? this.cursor.eat(first.slice(0, 1)) : "") +
+				this.line().popR(this.line().lengthR());
+
+			this.line().pushR(
+				before ? first.slice(this.cursor.length()) : this.cursor.bleL(first),
+			);
+
+			this.pasteLines(lines, this.line().index, 0);
+			this.buffer().lines[this.line().index - 1 + lines.length].pushL(saved);
 		}
 
 		this.cursor.save();
